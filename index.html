@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蛋仔导航网 · 向蛋仔许愿</title>
+<meta name="description" content="向蛋仔许愿的小站。写下愿望，蛋仔替你收好。还能在地图上点亮你去过的地方。">
+<meta property="og:title" content="蛋仔导航网 · 向蛋仔许愿">
+<meta property="og:description" content="把愿望交给发光的蛋仔。写下愿望，蛋仔替你收好。">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/danzi-cup-noodle.jpg">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="assets/danzi-cup-noodle.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  /* 设计令牌：按 landing-page-design 技能的视觉系统 */
+  :root {
+    --bg: #000000;
+    --bg-1: #181818;
+    --bg-2: #1F1F1F;
+    --bg-3: #272727;
+    --line: #313131;
+    --text: #FFFFFF;
+    --text-2: #9B9B9B;
+    --text-3: #6E6E6E;
+    --accent: #E8B93C;
+    --accent-text: #181818;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* 文字样式：只用 Tailwind 字号档位，字重最高 700，不用斜体 */
+  .heading-1 { font-size: 60px; line-height: 60px; font-weight: 600; letter-spacing: 0; text-wrap: balance; margin: 0; }
+  .heading-2 { font-size: 48px; line-height: 48px; font-weight: 600; letter-spacing: 0; text-wrap: balance; margin: 0; }
+  .heading-3 { font-size: 36px; line-height: 40px; font-weight: 600; letter-spacing: 0; text-wrap: balance; margin: 0; }
+  .title-1 { font-size: 20px; line-height: 28px; font-weight: 500; margin: 0; }
+  .title-2 { font-size: 18px; line-height: 28px; font-weight: 500; margin: 0; }
+  .body-1 { font-size: 16px; line-height: 24px; font-weight: 600; margin: 0; }
+  .body-2 { font-size: 16px; line-height: 24px; font-weight: 500; margin: 0; }
+  .body-3 { font-size: 16px; line-height: 24px; font-weight: 400; color: var(--text-2); text-wrap: pretty; margin: 0; }
+  .button-md { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .caption-1 { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-2); margin: 0; }
+  .caption-2 { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--text-3); margin: 0; }
+
+  .skip-link {
+    position: fixed; top: -48px; left: 16px; z-index: 100;
+    background: var(--accent); color: var(--accent-text);
+    padding: 8px 12px; border-radius: 8px; text-decoration: none;
+    transition: top 300ms var(--ease);
+  }
+  .skip-link:focus { top: 16px; }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+  .section { padding: 96px 0; }
+  .section-head { max-width: 680px; margin: 0 0 48px; }
+  .section-head p { margin-top: 16px; }
+
+  /* 按钮：主按钮 8px 纵向、12px 横向内边距，纯色背景 */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 8px 12px; border-radius: 12px; border: 1px solid transparent;
+    font: inherit; font-size: 16px; line-height: 24px; font-weight: 600;
+    text-decoration: none; cursor: pointer;
+    transition: background-color 300ms var(--ease), transform 300ms var(--ease), border-color 300ms var(--ease), opacity 300ms var(--ease);
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+  .btn-primary { background: var(--accent); color: var(--accent-text); }
+  .btn-primary:hover { background: #F0C44E; }
+  .btn-ghost { background: transparent; color: var(--text); border-color: var(--line); }
+  .btn-ghost:hover { border-color: var(--text-2); }
+  .btn .icon { width: 20px; height: 20px; flex: none; }
+  .icon { width: 24px; height: 24px; flex: none; }
+
+  /* 导航：悬浮圆角条，半透明加模糊 */
+  .nav {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    width: min(1200px, calc(100% - 32px)); z-index: 50;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 8px 12px; border-radius: 999px;
+    background: rgba(24, 24, 24, 0.8);
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border: 1px solid var(--line);
+  }
+  .brand { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+  .brand .icon { width: 24px; height: 24px; color: var(--accent); }
+  .brand span { font-size: 16px; line-height: 24px; font-weight: 600; }
+  .nav-links { display: flex; align-items: center; gap: 24px; }
+  .nav-links a { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--text-2); text-decoration: none; transition: color 300ms var(--ease); }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta { padding: 8px 12px; }
+  .menu-btn {
+    display: none; width: 40px; height: 40px; flex: none;
+    align-items: center; justify-content: center;
+    background: transparent; border: 1px solid var(--line); border-radius: 12px; cursor: pointer;
+  }
+  .menu-btn .lines { position: relative; width: 18px; height: 12px; }
+  .menu-btn .lines::before, .menu-btn .lines::after {
+    content: ""; position: absolute; left: 0; width: 18px; height: 2px;
+    background: var(--text); border-radius: 2px;
+    transition: transform 500ms var(--ease), top 500ms var(--ease);
+  }
+  .menu-btn .lines::before { top: 0; }
+  .menu-btn .lines::after { top: 10px; }
+  .menu-btn.open .lines::before { top: 5px; transform: rotate(45deg); }
+  .menu-btn.open .lines::after { top: 5px; transform: rotate(-45deg); }
+  .mobile-menu {
+    position: fixed; inset: 0; z-index: 40;
+    background: rgba(24, 24, 24, 0.96);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    display: flex; flex-direction: column; justify-content: center; gap: 32px;
+    padding: 96px 32px 48px;
+    opacity: 0; visibility: hidden; transition: opacity 500ms var(--ease), visibility 500ms var(--ease);
+  }
+  .mobile-menu.open { opacity: 1; visibility: visible; }
+  .mobile-menu a {
+    font-size: 36px; line-height: 40px; font-weight: 600; color: var(--text);
+    text-decoration: none; opacity: 0; transform: translateY(24px);
+    transition: opacity 500ms var(--ease), transform 500ms var(--ease);
+  }
+  .mobile-menu.open a { opacity: 1; transform: translateY(0); }
+  .mobile-menu .menu-note { font-size: 14px; line-height: 20px; color: var(--text-2); }
+
+  /* Hero */
+  .hero {
+    position: relative; padding: 160px 0 96px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72'%3E%3Ccircle cx='6' cy='6' r='1.2' fill='%23E8B93C' fill-opacity='0.16'/%3E%3Ccircle cx='42' cy='42' r='1' fill='%23E8B93C' fill-opacity='0.10'/%3E%3C/svg%3E");
+  }
+  /* 金色点缀：闪烁星星 + 蛋仔舞台金环 + 许愿卡金边 + 金色分隔线 */
+  .sparkle { position: absolute; color: var(--accent); font-size: 18px; line-height: 1; pointer-events: none; animation: twinkle 2.8s ease-in-out infinite; text-shadow: 0 0 12px rgba(232,185,60,0.6); z-index: 1; }
+  .sparkle.s1 { top: 18%; left: 6%; animation-delay: 0s; }
+  .sparkle.s2 { top: 30%; left: 48%; font-size: 14px; animation-delay: 0.7s; }
+  .sparkle.s3 { top: 12%; right: 10%; font-size: 22px; animation-delay: 1.2s; }
+  .sparkle.s4 { bottom: 22%; left: 42%; font-size: 13px; animation-delay: 1.8s; }
+  .sparkle.s5 { bottom: 30%; right: 6%; animation-delay: 2.3s; }
+  @keyframes twinkle { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } }
+  .stage::before {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 340px; height: 340px;
+    transform: translate(-50%, -50%); border: 1px solid rgba(232,185,60,0.22); border-radius: 50%;
+    pointer-events: none;
+  }
+  .gold-divider { display: flex; align-items: center; gap: 12px; max-width: 1200px; margin: 0 auto; padding: 0 24px; color: var(--accent); }
+  .gold-divider::before, .gold-divider::after { content: ""; flex: 1; height: 1px; background: rgba(232,185,60,0.35); }
+  .gold-divider i { font-style: normal; font-size: 14px; line-height: 1; }
+  .stat .num { color: var(--accent); }
+  .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; }
+  .hero-copy { max-width: 680px; }
+  .hero-copy h1 {
+    background: linear-gradient(90deg, #FFFFFF, #9B9B9B);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero-copy .sub { margin-top: 24px; }
+  .hero-cta { margin-top: 32px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .hero-proof { margin-top: 24px; }
+  .hero-proof b { color: var(--text); font-weight: 600; }
+  .stage { position: relative; min-height: 420px; }
+  #gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  #gl.drag { cursor: grabbing; }
+  .drag-tip {
+    position: absolute; left: 50%; bottom: 0; transform: translateX(-50%);
+    font-size: 12px; line-height: 16px; color: var(--text-2); letter-spacing: 0.08em;
+    pointer-events: none; white-space: nowrap;
+  }
+
+  /* 标语 reveal：逐词从淡变实 */
+  .tagline { padding: 96px 0; text-align: center; }
+  .tagline .heading-2 { max-width: 680px; margin: 0 auto; }
+  .tagline .w { opacity: 0.3; transition: opacity 600ms var(--ease); }
+  .tagline .w.on { opacity: 1; }
+
+  /* 好处卡片：2 列网格 */
+  .benefits { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .card {
+    background: var(--bg-2); border: 1px solid var(--line); border-radius: 16px;
+    padding: 32px;
+    transition: transform 500ms var(--ease), border-color 300ms var(--ease);
+  }
+  .card:hover { transform: translateY(-2px); border-color: var(--text-2); }
+  .card .chip {
+    width: 48px; height: 48px; border-radius: 8px; margin-bottom: 24px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-3); color: var(--accent);
+  }
+  .card h3 { margin: 0 0 8px; }
+  .card p { margin: 0; }
+
+  /* 三步 */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .step .num { font-size: 48px; line-height: 48px; font-weight: 600; color: var(--accent); margin-bottom: 16px; }
+  .step h3 { margin: 0 0 8px; }
+  .step p { margin: 0; }
+
+  /* 许愿表单 */
+  .wish-section { background: var(--bg-1); }
+  .wish-wrap { max-width: 680px; margin: 0 auto; }
+  .wish-card {
+    background: var(--bg-2); border: 1px solid rgba(232,185,60,0.35); border-radius: 16px;
+    padding: 32px; margin-top: 48px;
+    box-shadow: 0 0 0 1px rgba(232,185,60,0.08), 0 24px 64px rgba(0,0,0,0.45);
+  }
+  .wish-card h3 { margin: 0 0 24px; }
+  .wish-card label { display: block; margin: 0 0 8px; font-size: 16px; line-height: 24px; font-weight: 600; }
+  .wish-card textarea {
+    display: block; width: 100%; min-height: 96px; resize: vertical;
+    background: var(--bg-1); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px; font: inherit; font-size: 16px; line-height: 24px; color: var(--text);
+    outline: none; transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+  }
+  .wish-card textarea::placeholder { color: var(--text-3); }
+  .wish-card textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232, 185, 60, 0.2); }
+  .row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .counter { font-size: 14px; line-height: 20px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .counter.full { color: #F87171; }
+  .send { display: block; width: 100%; margin-top: 16px; }
+  .send.sailing { animation: sail 1.1s ease-in-out infinite; }
+  @keyframes sail { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  .msg { margin: 12px 0 0; font-size: 14px; line-height: 20px; min-height: 20px; color: var(--text-2); }
+  .msg.err { color: #FCA5A5; }
+  .msg.ok { color: #4ADE80; font-weight: 600; }
+  .success { text-align: center; padding: 24px 8px 8px; }
+  .success .big { font-size: 36px; line-height: 40px; margin-bottom: 16px; animation: pop 600ms var(--ease) both; }
+  @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.25); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+  .success h3 { margin: 0 0 8px; }
+  .success p { margin: 0 0 24px; }
+  .success .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* 功能卡片 */
+  .features { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .features.single { grid-template-columns: 1fr; }
+  .features.single .card { max-width: 680px; }
+  .feature-link {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 24px;
+    font-size: 16px; line-height: 24px; font-weight: 600; color: var(--accent); text-decoration: none;
+  }
+  .feature-link .icon { width: 20px; height: 20px; transition: transform 300ms var(--ease); }
+  .feature-link:hover .icon { transform: translateX(4px); }
+
+  /* 关于蛋仔 */
+  .about-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 48px; align-items: center; }
+  .about-photo { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); }
+  .about-photo img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+  .about-copy h2 { margin-bottom: 16px; }
+  .about-copy p + p { margin-top: 16px; }
+
+  /* 数字条 */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; text-align: center; }
+  .stat .num { font-size: 48px; line-height: 48px; font-weight: 600; }
+  .stat .num .unit { font-size: 20px; line-height: 28px; color: var(--text-2); font-weight: 500; }
+  .stat p { margin-top: 8px; }
+
+  /* FAQ */
+  .faq { max-width: 680px; margin: 0 auto; }
+  .faq-item { padding: 24px 0; border-top: 1px solid var(--line); }
+  .faq-item:last-child { border-bottom: 1px solid var(--line); }
+  .faq-item h3 { margin: 0 0 8px; }
+  .faq-item p { margin: 0; }
+
+  /* 结尾 CTA */
+  .final { text-align: center; }
+  .final .wrap { max-width: 680px; }
+  .final p { margin: 16px 0 32px; }
+
+  /* 页脚与隐私 */
+  .privacy { max-width: 680px; margin: 0 auto; }
+  .privacy h3 { margin: 0 0 16px; }
+  .privacy p + p { margin-top: 16px; }
+  footer { border-top: 1px solid var(--line); padding: 48px 0; }
+  .footer-grid { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; flex-wrap: wrap; }
+  .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
+  .footer-links a { font-size: 14px; line-height: 20px; color: var(--text-2); text-decoration: none; transition: color 300ms var(--ease); }
+  .footer-links a:hover { color: var(--text); }
+  .footer-meta { margin-top: 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .footer-meta b { color: var(--text); font-weight: 600; }
+
+  /* 滚动出现：上移 32px 加淡入，只出现一次 */
+  .reveal { opacity: 0; transform: translateY(32px); transition: opacity 700ms var(--ease), transform 700ms var(--ease); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  /* 同一组卡片依次出现 */
+  .benefits .card:nth-child(2) { transition-delay: 80ms; }
+  .benefits .card:nth-child(3) { transition-delay: 160ms; }
+  .benefits .card:nth-child(4) { transition-delay: 240ms; }
+  .steps .step:nth-child(2) { transition-delay: 100ms; }
+  .steps .step:nth-child(3) { transition-delay: 200ms; }
+
+  /* Hero 入场：标题、副文案、按钮、证明行、蛋仔依次出现 */
+  @keyframes hero-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .hero-copy h1, .hero-copy .sub, .hero-cta, .hero-proof { animation: hero-in 600ms var(--ease) both; }
+  .hero-copy .sub { animation-delay: 80ms; }
+  .hero-cta { animation-delay: 160ms; }
+  .hero-proof { animation-delay: 240ms; }
+  .stage { animation: hero-in 600ms var(--ease) 120ms both; }
+
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 32px; }
+    .stage { min-height: 360px; }
+    .about-grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+  @media (max-width: 720px) {
+    .nav-links, .nav-cta { display: none; }
+    .menu-btn { display: inline-flex; }
+    .section { padding: 64px 0; }
+    .hero { padding: 128px 0 64px; }
+    .heading-1 { font-size: 48px; line-height: 48px; }
+    .heading-2 { font-size: 36px; line-height: 40px; }
+    .heading-3 { font-size: 30px; line-height: 36px; }
+    .benefits, .features, .steps, .stats { grid-template-columns: 1fr; }
+    .wish-card { padding: 24px; }
+    .card { padding: 24px; }
+  }
+  @media (max-width: 390px) {
+    .heading-1 { font-size: 36px; line-height: 40px; }
+    .heading-2 { font-size: 30px; line-height: 36px; }
+    .stage { min-height: 300px; }
+    .wrap { padding: 0 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .tagline .w { opacity: 1; transition: none; }
+    .send.sailing { animation: none; }
+    .hero-copy h1, .hero-copy .sub, .hero-cta, .hero-proof, .stage { animation: none; }
+    .success .big { animation: none; }
+    .music-fab { animation: none; }
+    .sparkle { animation: none; }
+  }
+  /* 首页音乐播放器 */
+  .music-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 900;
+    width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(232,185,60,0.45);
+    background: #1F1F1F; color: #E8B93C; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; line-height: 1;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    animation: music-pulse 2.4s ease-in-out infinite;
+  }
+  .music-fab.playing { animation: none; }
+  @keyframes music-pulse { 0%, 100% { box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 0 rgba(232,185,60,0.35); } 50% { box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 10px rgba(232,185,60,0); } }
+  .music-panel {
+    position: fixed; right: 20px; bottom: 88px; z-index: 900;
+    width: min(340px, calc(100vw - 32px));
+    background: #1F1F1F; border: 1px solid #313131; border-radius: 16px;
+    padding: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+  }
+  .music-panel[hidden] { display: none; }
+  .music-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .music-head b { font-size: 15px; }
+  .music-head button { background: none; border: none; color: #A3A3A3; font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; }
+  .music-track { margin-bottom: 12px; }
+  .music-track .t { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .music-track .a { font-size: 13px; color: #A3A3A3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .music-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .music-controls .ctl { background: #272727; border: 1px solid #313131; color: #F5F5F5; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+  .music-controls .play { width: 48px; height: 48px; background: #E8B93C; border-color: #E8B93C; color: #111; font-size: 20px; }
+  .music-progress { flex: 1; height: 6px; border-radius: 999px; background: #313131; cursor: pointer; position: relative; overflow: hidden; }
+  .music-progress .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: #E8B93C; border-radius: 999px; }
+  .music-time { font-size: 12px; color: #A3A3A3; white-space: nowrap; }
+  .music-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .music-row input {
+    flex: 1; min-width: 0; background: #272727; border: 1px solid #313131; border-radius: 8px;
+    padding: 9px 12px; font: inherit; font-size: 14px; color: #F5F5F5; outline: none;
+  }
+  .music-row input:focus { border-color: #E8B93C; }
+  .music-row input::placeholder { color: #737373; }
+  .music-results { max-height: 180px; overflow-y: auto; margin: 0 0 10px; padding: 0; list-style: none; }
+  .music-results li { display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .music-results li:hover { background: #272727; }
+  .music-results li .rt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .music-results li .tag { flex: none; font-size: 11px; color: #E8B93C; border: 1px solid rgba(232,185,60,0.5); border-radius: 999px; padding: 1px 7px; }
+  .music-msg { font-size: 13px; color: #A3A3A3; min-height: 18px; margin: 0 0 8px; }
+  .music-foot { display: flex; align-items: center; gap: 10px; }
+  .music-foot label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #A3A3A3; cursor: pointer; white-space: nowrap; }
+  .music-foot input[type="range"] { flex: 1; accent-color: #E8B93C; }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header>
+  <nav class="nav" aria-label="主导航">
+    <a class="brand" href="#top" aria-current="page">
+      <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M186.66,59.56C168.47,32.29,146.54,16,128,16S87.53,32.29,69.34,59.56C50.7,87.54,40,121.23,40,152a88,88,0,0,0,176,0C216,121.23,205.3,87.54,186.66,59.56ZM128,224a72.08,72.08,0,0,1-72-72c0-27.69,9.72-58.15,26.66-83.56C97.19,46.64,115.41,32,128,32s30.81,14.64,45.34,36.44C190.28,93.85,200,124.31,200,152A72.08,72.08,0,0,1,128,224Z"/></svg>
+      <span>蛋仔导航网</span>
+    </a>
+    <div class="nav-links">
+      <a href="#wish">许愿</a>
+      <a href="/journey.html">旅途记录</a>
+      <a href="#features">站里有什么</a>
+      <a href="#faq">常见问题</a>
+      <a href="#contact">联系我们</a>
+    </div>
+    <a class="btn btn-primary nav-cta" href="#wish">许下愿望</a>
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="打开菜单" aria-expanded="false">
+      <span class="lines" aria-hidden="true"></span>
+    </button>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <a href="#wish">许愿</a>
+    <a href="/journey.html">旅途记录</a>
+    <a href="#features">站里有什么</a>
+    <a href="#faq">常见问题</a>
+    <a href="#contact">联系我们</a>
+    <a href="#wish">许下愿望</a>
+    <p class="menu-note">蛋仔导航网 · 向蛋仔许愿</p>
+  </div>
+</header>
+
+<main id="main">
+  <!-- Hero -->
+  <section class="hero" id="top">
+    <span class="sparkle s1" aria-hidden="true">✦</span>
+    <span class="sparkle s2" aria-hidden="true">✦</span>
+    <span class="sparkle s3" aria-hidden="true">✦</span>
+    <span class="sparkle s4" aria-hidden="true">✦</span>
+    <span class="sparkle s5" aria-hidden="true">✦</span>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1 class="heading-1">把愿望交给<br>发光的蛋仔</h1>
+        <p class="sub body-2">向蛋仔许愿的小站。写下愿望，蛋仔替你收好。还能在地图上点亮你去过的地方。</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#wish">许下愿望
+            <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="/journey.html">
+            <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,16a88,88,0,0,0-88,88c0,75.3,80,132,80,132s80-56.7,80-132A88,88,0,0,0,128,16Zm0,120a32,32,0,1,1,32-32A32,32,0,0,1,128,136Z"/></svg>
+            去旅途记录
+          </a>
+        </div>
+        <p class="hero-proof caption-1" id="heroProof">已有 <b data-visits>…</b> 位访客来过 · 已有 <b data-wishes>…</b> 个愿望被收好</p>
+      </div>
+      <div class="stage">
+        <canvas id="gl" aria-label="3D 蛋仔，可拖动旋转"></canvas>
+        <span class="drag-tip">← 拖动旋转 · 自动慢转 →</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 标语 reveal -->
+  <section class="tagline" aria-label="标语">
+    <div class="wrap">
+      <p class="heading-2" id="tagline"><span class="w">有些愿望</span> <span class="w">说出来</span><br><span class="w">就离实现</span> <span class="w">近了一点</span></p>
+    </div>
+  </section>
+
+  <!-- 好处 -->
+  <section class="section" id="why">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="heading-2">为什么来这里许愿</h2>
+      </div>
+      <div class="benefits">
+        <article class="card reveal">
+          <div class="chip"><svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></div>
+          <h3 class="title-1">不用注册</h3>
+          <p class="body-3">不用注册，不用登录。打开页面，写下愿望就能送。</p>
+        </article>
+        <article class="card reveal">
+          <div class="chip"><svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></div>
+          <h3 class="title-1">不会被公开</h3>
+          <p class="body-3">愿望只存在后台，只有站长能看到，不会显示给别人。</p>
+        </article>
+        <article class="card reveal">
+          <div class="chip"><svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></div>
+          <h3 class="title-1">蛋仔会认真收好</h3>
+          <p class="body-3">送出后蛋仔会跳一下，金色星光一闪，表示收到了。</p>
+        </article>
+        <article class="card reveal">
+          <div class="chip"><svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></svg></div>
+          <h3 class="title-1">许完还能玩</h3>
+          <p class="body-3">去地图上点亮你去过的地方，看看有多少人和你去过同一个城市。</p>
+        </article>
+        
+      </div>
+    </div>
+  </section>
+
+  <!-- 三步 -->
+  <section class="section" id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="heading-2">三步就够了</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="num">01</div>
+          <h3 class="title-1">写下愿望</h3>
+          <p class="body-3">120 字以内，写什么都行。</p>
+        </div>
+        <div class="step reveal">
+          <div class="num">02</div>
+          <h3 class="title-1">点送往蛋仔</h3>
+          <p class="body-3">不用等，马上就送出去。</p>
+        </div>
+        <div class="step reveal">
+          <div class="num">03</div>
+          <h3 class="title-1">蛋仔替你收好</h3>
+          <p class="body-3">蛋仔跳一下，愿望已送达。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 许愿表单 -->
+  <section class="section wish-section" id="wish">
+    <div class="wrap wish-wrap">
+      <div class="reveal">
+        <h2 class="heading-2">请向蛋仔许愿</h2>
+        <p class="body-3" style="margin-top: 16px;">写下你的愿望，120 字以内。送出后蛋仔会替你收好。</p>
+      </div>
+      <div class="wish-card reveal" id="wishCard">
+        <form id="wishForm">
+          <label for="wishText">写下你的愿望</label>
+          <textarea id="wishText" name="wish" maxlength="120" rows="3" placeholder="例如：希望今年可以勇敢一点，去见想见的人。"></textarea>
+          <div class="row">
+            <span class="counter" id="counter">0 / 120</span>
+          </div>
+          <button class="btn btn-primary send" type="submit" id="sendBtn">送往蛋仔</button>
+          <p class="msg" id="formMsg" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 功能 -->
+  <section class="section" id="features">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 class="heading-2">站里还有什么</h2>
+        <p class="body-3">除了许愿，这个站还有一样东西可以玩。</p>
+      </div>
+      <div class="features single">
+        <article class="card reveal">
+          <div class="chip"><svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,64a40,40,0,1,0,40,40A40,40,0,0,0,128,64Zm0,64a24,24,0,1,1,24-24A24,24,0,0,1,128,128Zm0-112a88.1,88.1,0,0,0-88,88c0,31.4,14.51,64.68,42,96.25a254.19,254.19,0,0,0,41.45,38.3,8,8,0,0,0,9.18,0A254.19,254.19,0,0,0,174,200.25c27.45-31.57,42-64.85,42-96.25A88.1,88.1,0,0,0,128,16Zm0,206c-16.53-13-72-60.75-72-118a72,72,0,0,1,144,0C200,161.23,144.53,209,128,222Z"/></svg></div>
+          <h3 class="title-1">旅途记录</h3>
+          <p class="body-3">一张中国地图，点亮你去过的城市。注册后可以点亮、传照片、留言，看看有多少人和你去过同一个地方。</p>
+          <a class="feature-link" href="/journey.html">去看看
+            <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></svg>
+          </a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关于蛋仔 -->
+  <section class="section" id="about">
+    <div class="wrap about-grid">
+      <div class="about-photo reveal">
+        <img src="assets/danzi-cup-noodle.jpg" alt="蛋仔：一颗圆圆的黄色蛋，头顶戴着一杯咖喱杯面" width="720" height="720">
+      </div>
+      <p class="caption-1" style="grid-column: 1; margin-top: 12px;">蛋仔本蛋，头顶一杯咖喱杯面</p>
+      <div class="about-copy reveal">
+        <h2 class="heading-2">蛋仔是谁</h2>
+        <p class="body-3">蛋仔是一颗圆圆的黄色蛋，头顶戴着一杯咖喱杯面。</p>
+        <p class="body-3">这个站就是他的家。许愿和旅途记录都住在这里，进来的人都是他的客人。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 数字 -->
+  <section class="section" id="stats">
+    <div class="wrap">
+      <div class="stats reveal">
+        <div class="stat">
+          <div class="num"><span data-visits>…</span></div>
+          <p class="caption-1">位访客来过</p>
+        </div>
+        <div class="stat">
+          <div class="num"><span data-wishes>…</span></div>
+          <p class="caption-1">个愿望被收好</p>
+        </div>
+        <div class="stat">
+          <div class="num">3071</div>
+          <p class="caption-1">个城市等你点亮</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 常见问题 -->
+  <div class="gold-divider" aria-hidden="true"><i>✦</i></div>
+  <section class="section" id="faq">
+    <div class="wrap faq">
+      <div class="section-head reveal">
+        <h2 class="heading-2">常见问题</h2>
+      </div>
+      <div class="faq-item reveal">
+        <h3 class="title-1">愿望会被别人看到吗</h3>
+        <p class="body-3">不会。愿望只存在后台，只有站长能看到，不会在页面上公开显示。</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3 class="title-1">许愿要花钱吗</h3>
+        <p class="body-3">不用，免费。</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3 class="title-1">蛋仔是谁</h3>
+        <p class="body-3">一颗圆圆的黄色蛋，头顶戴着一杯咖喱杯面，这个站就是他的家。</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3 class="title-1">旅途记录是什么</h3>
+        <p class="body-3">一张中国地图，点亮你去过的城市。注册后可以点亮、传照片、留言，看看有多少人和你去过同一个地方。</p>
+      </div>
+      <div class="faq-item reveal">
+        <h3 class="title-1">愿望真的会实现吗</h3>
+        <p class="body-3">没人能保证。但说出来，就离实现近了一点。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 结尾 CTA -->
+  <section class="section final">
+    <div class="wrap reveal">
+      <h2 class="heading-2">轮到你了</h2>
+      <p class="body-3">不用注册，30 秒就够了。</p>
+      <a class="btn btn-primary" href="#wish">许下愿望
+        <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- 联系我们 -->
+  <div class="gold-divider" aria-hidden="true"><i>✦</i></div>
+  <section class="section" id="contact">
+    <div class="wrap privacy reveal">
+      <h2 class="heading-2">联系我们</h2>
+      <p class="body-3" style="margin-top: 16px;">有想法、建议，或者想聊聊蛋仔，都可以写邮件给我。</p>
+      <a class="btn btn-ghost" style="margin-top: 24px;" href="mailto:rongyaolei07@gmail.com">
+        <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48Zm-96,85.15L52.57,64H203.43ZM98.71,128,40,181.81V74.19Zm11.84,10.85,12,11.05a8,8,0,0,0,10.82,0l12-11.05,58,53.15H52.57ZM157.29,128,216,74.18V181.82Z"/></svg>
+        rongyaolei07@gmail.com
+      </a>
+    </div>
+  </section>
+
+  <!-- 隐私说明 -->
+  <section class="section" id="privacy">
+    <div class="wrap privacy reveal">
+      <h3 class="title-1">隐私说明</h3>
+      <p class="body-3">这个站没有账号系统，不收集姓名和联系方式。愿望只保存在后台，只有站长能看到。页面底部会记一次访问数，用来显示有多少人来过，不会用来认出你是谁。</p>
+      <p class="body-3">使用须知：别在愿望里写密码、手机号和地址。</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-grid">
+      <a class="brand" href="#top">
+        <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M186.66,59.56C168.47,32.29,146.54,16,128,16S87.53,32.29,69.34,59.56C50.7,87.54,40,121.23,40,152a88,88,0,0,0,176,0C216,121.23,205.3,87.54,186.66,59.56ZM128,224a72.08,72.08,0,0,1-72-72c0-27.69,9.72-58.15,26.66-83.56C97.19,46.64,115.41,32,128,32s30.81,14.64,45.34,36.44C190.28,93.85,200,124.31,200,152A72.08,72.08,0,0,1,128,224Z"/></svg>
+        <span>蛋仔导航网</span>
+      </a>
+      <nav class="footer-links" aria-label="页脚导航">
+        <a href="#wish">许愿</a>
+        <a href="#features">站里有什么</a>
+        <a href="#faq">常见问题</a>
+        <a href="#contact">联系我们</a>
+        <a href="#privacy">隐私说明</a>
+      </nav>
+    </div>
+    <div class="footer-meta">
+      <p class="caption-1">已有 <b data-visits>…</b> 位访客来过</p>
+      <p class="caption-2">蛋仔导航网 · 2026</p>
+    </div>
+  </div>
+</footer>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ---------- 3D 蛋仔：全身是一个球 ---------- */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 50);
+camera.position.set(0, 0.25, 4.6);
+camera.lookAt(0, 0, 0);
+
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(3, 5, 4);
+scene.add(key);
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const rim = new THREE.DirectionalLight(0x7ef0e0, 0.9);
+rim.position.set(-4, 2, -3);
+scene.add(rim);
+
+const danzi = new THREE.Group();
+scene.add(danzi);
+
+// 身体：黄色大圆球
+const body = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 64, 64),
+  new THREE.MeshStandardMaterial({ color:0xf2c230, roughness:0.32, metalness:0.0 })
+);
+danzi.add(body);
+
+// 脸：前面一块奶油色椭圆
+const face = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 48, 48),
+  new THREE.MeshStandardMaterial({ color:0xf7e6c8, roughness:0.45 })
+);
+face.scale.set(0.66, 0.74, 0.28);
+face.position.set(0, -0.02, 0.74);
+danzi.add(face);
+
+// 眼睛：白眼球 + 黑瞳孔 + 高光
+function makeEye(x) {
+  const g = new THREE.Group();
+  const white = new THREE.Mesh(
+    new THREE.SphereGeometry(0.17, 32, 32),
+    new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.25 })
+  );
+  white.scale.set(1, 1.15, 0.55);
+  const pupil = new THREE.Mesh(
+    new THREE.SphereGeometry(0.085, 32, 32),
+    new THREE.MeshStandardMaterial({ color:0x1a1210, roughness:0.15 })
+  );
+  pupil.scale.set(1, 1.15, 0.5);
+  pupil.position.set(0.01, -0.01, 0.11);
+  const shine = new THREE.Mesh(
+    new THREE.SphereGeometry(0.028, 16, 16),
+    new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.1 })
+  );
+  shine.position.set(0.05, 0.05, 0.16);
+  g.add(white, pupil, shine);
+  g.position.set(x, 0.14, 0.94);
+  return g;
+}
+danzi.add(makeEye(-0.29), makeEye(0.29));
+
+// 嘴：张开的红嘴（黑底 + 红唇 + 粉舌头）
+const mouthOuter = new THREE.Mesh(
+  new THREE.SphereGeometry(0.17, 32, 32),
+  new THREE.MeshStandardMaterial({ color:0x2b1512, roughness:0.4 })
+);
+mouthOuter.scale.set(1, 0.82, 0.4);
+mouthOuter.position.set(0, -0.3, 0.97);
+const mouthRed = new THREE.Mesh(
+  new THREE.SphereGeometry(0.145, 32, 32),
+  new THREE.MeshStandardMaterial({ color:0xe23b3b, roughness:0.35 })
+);
+mouthRed.scale.set(1, 0.78, 0.4);
+mouthRed.position.set(0, -0.31, 0.99);
+const tongue = new THREE.Mesh(
+  new THREE.SphereGeometry(0.07, 24, 24),
+  new THREE.MeshStandardMaterial({ color:0xf27d7d, roughness:0.4 })
+);
+tongue.scale.set(1.2, 0.55, 0.4);
+tongue.position.set(0, -0.36, 1.03);
+danzi.add(mouthOuter, mouthRed, tongue);
+
+// 小手：身体两侧的小黄点
+for (const x of [-1.0, 1.0]) {
+  const arm = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 24, 24),
+    new THREE.MeshStandardMaterial({ color:0xf2c230, roughness:0.35 })
+  );
+  arm.scale.set(0.7, 1.4, 0.7);
+  arm.position.set(x, -0.12, 0.05);
+  danzi.add(arm);
+}
+
+// 小白脚
+for (const x of [-0.34, 0.34]) {
+  const foot = new THREE.Mesh(
+    new THREE.SphereGeometry(0.17, 24, 24),
+    new THREE.MeshStandardMaterial({ color:0xf5f7fa, roughness:0.4 })
+  );
+  foot.scale.set(1, 0.55, 1.35);
+  foot.position.set(x, -0.96, 0.12);
+  danzi.add(foot);
+}
+
+// 头顶的泡面杯：微倾的圆柱，杯身用 canvas 画出咖喱杯面包装
+function cupTexture() {
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#f7c948'; ctx.fillRect(0, 0, 1024, 512);
+  ctx.fillStyle = '#d23b2e'; ctx.fillRect(0, 0, 1024, 46);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 46, 1024, 10);
+  ctx.fillStyle = '#d23b2e'; ctx.fillRect(0, 456, 1024, 56);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 446, 1024, 10);
+  ctx.fillStyle = '#a31f14';
+  ctx.font = '900 150px Arial, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('CURRY', 512, 200);
+  ctx.fillStyle = '#7a1a10';
+  ctx.font = '700 64px Arial, sans-serif';
+  ctx.fillText('CUP NOODLE', 512, 320);
+  ctx.strokeStyle = 'rgba(163,31,20,.55)';
+  ctx.lineWidth = 8;
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    for (let x = 60; x <= 964; x += 8) {
+      const y = 400 + Math.sin((x + i * 90) / 46) * 10;
+      x === 60 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+const cup = new THREE.Group();
+const cupBody = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.36, 0.45, 0.52, 48, 1, false),
+  new THREE.MeshStandardMaterial({ map:cupTexture(), roughness:0.45 })
+);
+const cupLid = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.375, 0.375, 0.05, 48),
+  new THREE.MeshStandardMaterial({ color:0xf3e3c2, roughness:0.5 })
+);
+cupLid.position.y = 0.28;
+const cupRim = new THREE.Mesh(
+  new THREE.TorusGeometry(0.45, 0.025, 12, 48),
+  new THREE.MeshStandardMaterial({ color:0xd8c49a, roughness:0.5 })
+);
+cupRim.rotation.x = Math.PI / 2;
+cupRim.position.y = -0.26;
+cup.add(cupBody, cupLid, cupRim);
+cup.position.set(-0.06, 1.22, 0.05);
+cup.rotation.z = 0.22;
+cup.rotation.x = -0.06;
+danzi.add(cup);
+
+// 底部柔和阴影
+const shadow = new THREE.Mesh(
+  new THREE.CircleGeometry(0.85, 48),
+  new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:0.28 })
+);
+shadow.rotation.x = -Math.PI / 2;
+shadow.position.y = -1.28;
+scene.add(shadow);
+
+danzi.position.y = 0.1;
+
+/* ---------- 许愿成功特效：金色星光迸发 + 蛋仔欢呼跳跃 ---------- */
+const BURST_N = 200;
+const burstGeo = new THREE.BufferGeometry();
+const burstPos = new Float32Array(BURST_N * 3);
+const burstVel = [];
+for (let i = 0; i < BURST_N; i++) {
+  burstVel.push(new THREE.Vector3((Math.random() - 0.5) * 2, Math.random() * 1.6 + 0.4, (Math.random() - 0.5) * 2).normalize().multiplyScalar(1.6 + Math.random() * 2.2));
+}
+burstGeo.setAttribute('position', new THREE.BufferAttribute(burstPos, 3));
+const burstMat = new THREE.PointsMaterial({ color:0xffd76a, size:0.13, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false });
+const burst = new THREE.Points(burstGeo, burstMat);
+burst.visible = false;
+scene.add(burst);
+const cheerLight = new THREE.PointLight(0xffd76a, 0, 8);
+cheerLight.position.set(0, 1.5, 2.5);
+scene.add(cheerLight);
+let cheerStart = -10;
+function celebrate() {
+  cheerStart = clock.getElapsedTime();
+  burst.visible = true;
+  for (let i = 0; i < BURST_N; i++) {
+    const d = burstVel[i].clone().normalize();
+    burstPos[i * 3] = d.x * 0.9; burstPos[i * 3 + 1] = 0.1 + d.y * 0.9; burstPos[i * 3 + 2] = d.z * 0.9;
+  }
+  burstGeo.attributes.position.needsUpdate = true;
+}
+
+/* ---------- 旋转：自动慢转 + 拖动旋转（带阻尼） ---------- */
+let targetRY = 0.4, targetRX = 0.05;
+let curRY = 0.4, curRX = 0.05;
+let dragging = false, lastX = 0, lastY = 0, lastMove = 0;
+let autoSpin = true;
+
+canvas.addEventListener('pointerdown', (e) => {
+  dragging = true; autoSpin = false; lastMove = performance.now();
+  lastX = e.clientX; lastY = e.clientY;
+  canvas.classList.add('drag');
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  targetRY += (e.clientX - lastX) * 0.008;
+  targetRX = Math.max(-0.45, Math.min(0.45, targetRX + (e.clientY - lastY) * 0.005));
+  lastX = e.clientX; lastY = e.clientY; lastMove = performance.now();
+});
+function endDrag() {
+  dragging = false;
+  canvas.classList.remove('drag');
+  setTimeout(() => { if (performance.now() - lastMove > 2400) autoSpin = true; }, 2500);
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas);
+resize();
+
+const clock = new THREE.Clock();
+function tick() {
+  requestAnimationFrame(tick);
+  const t = clock.getElapsedTime();
+  if (autoSpin && !dragging) targetRY += 0.0035;
+  curRY += (targetRY - curRY) * 0.08;
+  curRX += (targetRX - curRX) * 0.08;
+  danzi.rotation.y = curRY;
+  danzi.rotation.x = curRX;
+  danzi.position.y = 0.1 + Math.sin(t * 1.4) * 0.06;
+  shadow.scale.setScalar(1 - Math.sin(t * 1.4) * 0.05);
+  const cheerAge = t - cheerStart;
+  if (cheerAge >= 0 && cheerAge < 3.0) {
+    targetRY += 0.02;
+    const fade = 1 - cheerAge / 3.0;
+    danzi.position.y += Math.abs(Math.sin(cheerAge * 6)) * 0.35 * fade;
+    danzi.scale.setScalar(1 + Math.sin(cheerAge * 6) * 0.04 * fade);
+    cheerLight.intensity = 30 * fade;
+    for (let i = 0; i < BURST_N; i++) {
+      burstPos[i * 3] += burstVel[i].x * 0.016;
+      burstPos[i * 3 + 1] += burstVel[i].y * 0.016 - 0.012;
+      burstPos[i * 3 + 2] += burstVel[i].z * 0.016;
+    }
+    burstGeo.attributes.position.needsUpdate = true;
+    burstMat.opacity = Math.max(0, 1 - cheerAge / 3.0);
+  } else if (burst.visible) {
+    burst.visible = false;
+    burstMat.opacity = 0;
+    cheerLight.intensity = 0;
+    danzi.scale.setScalar(1);
+  }
+  renderer.render(scene, camera);
+}
+tick();
+
+/* ---------- 许愿表单：120 字计数 + 提交 ---------- */
+const form = document.getElementById('wishForm');
+const text = document.getElementById('wishText');
+const counter = document.getElementById('counter');
+const sendBtn = document.getElementById('sendBtn');
+const formMsg = document.getElementById('formMsg');
+const card = document.getElementById('wishCard');
+
+text.addEventListener('input', () => {
+  const n = text.value.length;
+  counter.textContent = `${n} / 120`;
+  counter.classList.toggle('full', n >= 120);
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const wish = text.value.trim();
+  if (!wish) { formMsg.textContent = '先写下你的愿望再送出哦'; formMsg.classList.add('err'); return; }
+  sendBtn.disabled = true;
+  sendBtn.textContent = '愿望启航';
+  sendBtn.classList.add('sailing');
+  formMsg.textContent = '';
+  formMsg.classList.remove('err', 'ok');
+  try {
+    const res = await fetch('/api/wish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: wish }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `提交失败（${res.status}）`);
+    celebrate();
+    formMsg.textContent = '愿望已送达';
+    formMsg.classList.add('ok');
+    setTimeout(() => {
+      card.innerHTML = `
+        <div class="success">
+          <div class="big">✨</div>
+          <h3 class="heading-3">愿望已送达</h3>
+          <p class="body-3">蛋仔已经把你的愿望收好啦。<br>愿它在某个发光的时刻实现。</p>
+          <p class="body-3">顺便去地图上点亮你去过的地方，看看有多少人和你去过同一个城市。</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="/journey.html">去旅途记录看看</a>
+            <button class="btn btn-ghost" type="button" id="againBtn">再许一个愿望</button>
+          </div>
+        </div>`;
+      document.getElementById('againBtn').addEventListener('click', () => location.reload());
+    }, 2200);
+  } catch (err) {
+    formMsg.textContent = err.message || '发送失败，请检查网络后重试';
+    formMsg.classList.add('err');
+    sendBtn.disabled = false;
+    sendBtn.textContent = '送往蛋仔';
+    sendBtn.classList.remove('sailing');
+  }
+});
+</script>
+
+<!-- 音乐播放器 -->
+<button class="music-fab" id="musicFab" type="button" aria-label="打开音乐播放器">♪</button>
+<div class="music-panel" id="musicPanel" hidden>
+  <div class="music-head"><b>音乐</b><button id="musicClose" type="button" aria-label="收起">×</button></div>
+  <div class="music-track"><div class="t" id="musicTitle">蛋仔派对卡农</div><div class="a" id="musicArtist">蛋蛋黑</div></div>
+  <div class="music-controls">
+    <button class="ctl" id="musicPrev" type="button" aria-label="上一首">⏮</button>
+    <button class="ctl play" id="musicPlay" type="button" aria-label="播放">▶</button>
+    <button class="ctl" id="musicNext" type="button" aria-label="下一首">⏭</button>
+    <div class="music-progress" id="musicProgress"><div class="fill" id="musicFill"></div></div>
+    <span class="music-time" id="musicTime">0:00 / 2:16</span>
+  </div>
+  <div class="music-row">
+    <input id="musicSearch" type="search" placeholder="搜一首歌，比如 周杰伦" autocomplete="off">
+    <button class="btn btn-primary" id="musicSearchBtn" type="button">搜索</button>
+  </div>
+  <ul class="music-results" id="musicResults"></ul>
+  <p class="music-msg" id="musicMsg">点 ▶ 播放蛋仔派对卡农；搜到的歌是 30 秒试听。</p>
+  <div class="music-foot">
+    <label for="musicFile">本地音乐</label>
+    <input id="musicFile" type="file" accept="audio/*" hidden>
+    <input id="musicVol" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="音量">
+  </div>
+</div>
+<audio id="bgmAudio" preload="metadata"></audio>
+<script>
+/* ---------- 移动端菜单：全屏面板，链接依次入场 ---------- */
+(function () {
+  const btn = document.getElementById('menuBtn');
+  const menu = document.getElementById('mobileMenu');
+  if (!btn || !menu) return;
+  const links = menu.querySelectorAll('a');
+  function setOpen(open) {
+    btn.classList.toggle('open', open);
+    menu.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    menu.setAttribute('aria-hidden', String(!open));
+    btn.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+    document.body.style.overflow = open ? 'hidden' : '';
+    if (open) {
+      links.forEach((a, i) => { a.style.transitionDelay = Math.min(i * 60, 400) + 'ms'; });
+    } else {
+      links.forEach((a) => { a.style.transitionDelay = '0ms'; });
+    }
+  }
+  btn.addEventListener('click', () => setOpen(!menu.classList.contains('open')));
+  links.forEach((a) => a.addEventListener('click', () => setOpen(false)));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.classList.contains('open')) setOpen(false);
+  });
+})();
+
+/* ---------- 滚动出现：区块上移 32px 加淡入，只出现一次 ---------- */
+(function () {
+  const els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    els.forEach((el) => el.classList.add('in'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  els.forEach((el) => io.observe(el));
+})();
+
+/* ---------- 标语 reveal：每个词经过触发线时逐个变实 ---------- */
+(function () {
+  const words = document.querySelectorAll('#tagline .w');
+  if (!words.length) return;
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    words.forEach((w) => w.classList.add('on'));
+    return;
+  }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('on');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -25% 0px' });
+  words.forEach((w) => io.observe(w));
+})();
+
+/* ---------- 计数：访客数与愿望数，同一浏览器一次打开只算 1 次访问 ---------- */
+(function () {
+  const fmt = (n) => n.toLocaleString('en-US');
+  /* 显示基数：页面上显示 真实数 + 基数。现在真实访客 23、真实愿望 6，显示就是 450 / 380；之后有新的真实访问或愿望，显示数会继续往上加，真实数仍在后台记录 */
+  const VISITS_DISPLAY_BASE = 427;
+  const WISHES_DISPLAY_BASE = 374;
+  const setVisits = (n) => document.querySelectorAll('[data-visits]').forEach((el) => { el.textContent = fmt(n); });
+  const setWishes = (n) => document.querySelectorAll('[data-wishes]').forEach((el) => { el.textContent = fmt(n); });
+  const counted = sessionStorage.getItem('danzi-counted');
+  let visitsReady = false;
+  let wishesReady = false;
+  fetch('/api/visits', { method: counted ? 'GET' : 'POST' })
+    .then((r) => r.json())
+    .then((d) => {
+      if (typeof d.count !== 'number') throw new Error('bad count');
+      setVisits(d.count + VISITS_DISPLAY_BASE);
+      sessionStorage.setItem('danzi-counted', '1');
+      visitsReady = true;
+      maybeCountUp();
+    })
+    .catch(() => {
+      document.querySelectorAll('[data-visits]').forEach((el) => { el.textContent = '很多'; });
+    });
+  fetch('/api/wish-count')
+    .then((r) => r.json())
+    .then((d) => {
+      if (typeof d.count !== 'number') throw new Error('bad count');
+      setWishes(d.count + WISHES_DISPLAY_BASE);
+      wishesReady = true;
+      maybeCountUp();
+    })
+    .catch(() => {
+      document.querySelectorAll('[data-wishes]').forEach((el) => { el.textContent = '很多'; });
+    });
+
+  /* ---------- 数字滚动：统计区滚入视口时，数字从 0 数到目标值 ---------- */
+  const stats = document.getElementById('stats');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let countedUp = false;
+  let statsInView = false;
+  function maybeCountUp() {
+    if (countedUp || !statsInView || !visitsReady || !wishesReady) return;
+    const targets = [];
+    stats.querySelectorAll('.stat').forEach((stat) => {
+      const numEl = stat.querySelector('.num');
+      const span = numEl.querySelector('span');
+      const el = span || numEl;
+      const target = parseInt(el.textContent.replace(/,/g, ''), 10);
+      if (!Number.isNaN(target)) targets.push([el, target]);
+    });
+    if (!targets.length) return;
+    countedUp = true;
+    if (reduce) return;
+    const start = performance.now();
+    const dur = 900;
+    (function frame(now) {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      targets.forEach(([el, target]) => { el.textContent = fmt(Math.round(target * eased)); });
+      if (p < 1) requestAnimationFrame(frame);
+    })(start);
+  }
+  if (stats && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          statsInView = true;
+          maybeCountUp();
+          io.disconnect();
+        }
+      });
+    }, { threshold: 0.3 });
+    io.observe(stats);
+  }
+})();
+
+/* ---------- 首页音乐播放器：默认音乐 + 搜索试听 + 本地文件 ---------- */
+(function () {
+  var audio = document.getElementById('bgmAudio');
+  var fab = document.getElementById('musicFab');
+  var panel = document.getElementById('musicPanel');
+  var playBtn = document.getElementById('musicPlay');
+  var titleEl = document.getElementById('musicTitle');
+  var artistEl = document.getElementById('musicArtist');
+  var fill = document.getElementById('musicFill');
+  var progress = document.getElementById('musicProgress');
+  var timeEl = document.getElementById('musicTime');
+  var msg = document.getElementById('musicMsg');
+  var resultsEl = document.getElementById('musicResults');
+  var searchInput = document.getElementById('musicSearch');
+  var vol = document.getElementById('musicVol');
+  var tracks = [{ title: '蛋仔派对卡农', artist: '蛋蛋黑', src: 'assets/home-bgm.m4a', loop: true, preview: false }];
+  var current = 0;
+  /* 跨页续播：把曲目、进度、播放状态存到 localStorage，旅途页的播放器读到后从同一位置继续 */
+  var STATE_KEY = 'danzi-music-state';
+  function saveState() {
+    try {
+      if (!audio.src || audio.src.indexOf('blob:') === 0) return;
+      localStorage.setItem(STATE_KEY, JSON.stringify({ src: audio.src, title: titleEl.textContent, artist: artistEl.textContent, loop: audio.loop, preview: tracks[current] ? !!tracks[current].preview : false, time: audio.currentTime, playing: !audio.paused }));
+    } catch (e) {}
+  }
+  function restoreState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STATE_KEY) || 'null');
+      if (!s || !s.src || s.src.indexOf('blob:') === 0) return false;
+      var idx = -1;
+      for (var k = 0; k < tracks.length; k++) { if (s.src.indexOf(tracks[k].src) !== -1) { idx = k; break; } }
+      if (idx === -1) { tracks.push({ title: s.title, artist: s.artist, src: s.src, loop: !!s.loop, preview: !!s.preview }); idx = tracks.length - 1; }
+      load(idx);
+      audio.addEventListener('loadedmetadata', function seekOnce() {
+        audio.removeEventListener('loadedmetadata', seekOnce);
+        if (s.time > 0 && isFinite(audio.duration) && s.time < audio.duration) { try { audio.currentTime = s.time; } catch (e) {} }
+        if (s.playing) {
+          audio.play().then(function () { setPlaying(true); msg.textContent = '正在从上个页面继续播放。'; }).catch(function () {
+            msg.textContent = '点 ▶ 从上次的位置继续播放。'; setPlaying(false);
+          });
+        } else {
+          msg.textContent = '点 ▶ 从上次的位置继续播放。';
+        }
+      });
+      return true;
+    } catch (e) { return false; }
+  }
+  function fmt(s) { if (!isFinite(s)) return '0:00'; s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function load(i) {
+    current = (i + tracks.length) % tracks.length;
+    var t = tracks[current];
+    audio.src = t.src;
+    audio.loop = !!t.loop;
+    titleEl.textContent = t.title;
+    artistEl.textContent = t.artist;
+    fill.style.width = '0%';
+    timeEl.textContent = '0:00 / ' + (t.preview ? '0:30' : '—');
+  }
+  function setPlaying(p) {
+    playBtn.textContent = p ? '⏸' : '▶';
+    fab.classList.toggle('playing', p);
+  }
+  function playCurrent() {
+    audio.play().then(function () { setPlaying(true); }).catch(function () {
+      msg.textContent = '浏览器不让自动播放，点一下 ▶ 再试。';
+    });
+  }
+  playBtn.addEventListener('click', function () {
+    if (audio.paused) {
+      if (!audio.src) load(0);
+      if (audio.error) { audio.load(); }
+      playCurrent();
+    }
+    else { audio.pause(); setPlaying(false); }
+  });
+  audio.addEventListener('error', function () {
+    msg.textContent = '音频加载失败，可能是网络问题，点 ▶ 重试。';
+    setPlaying(false);
+  });
+  document.getElementById('musicPrev').addEventListener('click', function () { load(current - 1); playCurrent(); });
+  document.getElementById('musicNext').addEventListener('click', function () { load(current + 1); playCurrent(); });
+  audio.addEventListener('ended', function () { if (!audio.loop) { load(current + 1); playCurrent(); } });
+  var saveTick = 0;
+  audio.addEventListener('timeupdate', function () {
+    if (audio.duration) fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+    timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
+    if (!audio.paused && ++saveTick % 20 === 0) saveState();
+  });
+  audio.addEventListener('pause', saveState);
+  window.addEventListener('pagehide', saveState);
+  audio.addEventListener('loadedmetadata', function () { timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration); });
+  progress.addEventListener('click', function (e) {
+    var r = progress.getBoundingClientRect();
+    if (audio.duration) audio.currentTime = (e.clientX - r.left) / r.width * audio.duration;
+  });
+  try { var v = localStorage.getItem('danzi-music-vol'); if (v !== null) vol.value = v; } catch (e) {}
+  audio.volume = parseFloat(vol.value) || 0.8;
+  vol.addEventListener('input', function () {
+    audio.volume = parseFloat(vol.value);
+    try { localStorage.setItem('danzi-music-vol', vol.value); } catch (e) {}
+  });
+  function setOpen(open) {
+    panel.hidden = !open;
+    try { localStorage.setItem('danzi-music-open', open ? '1' : '0'); } catch (e) {}
+  }
+  fab.addEventListener('click', function () { setOpen(panel.hidden); });
+  document.getElementById('musicClose').addEventListener('click', function () { setOpen(false); });
+  try { if (localStorage.getItem('danzi-music-open') === '1') setOpen(true); } catch (e) {}
+  function doSearch() {
+    var q = searchInput.value.trim();
+    if (!q) { msg.textContent = '先输入歌名或歌手。'; return; }
+    msg.textContent = '正在搜…';
+    resultsEl.innerHTML = '';
+    fetch('https://itunes.apple.com/search?term=' + encodeURIComponent(q) + '&media=music&entity=song&limit=8')
+      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function (d) {
+        var list = (d.results || []).filter(function (x) { return x.previewUrl; });
+        if (!list.length) { msg.textContent = '没搜到，换个关键词试试。'; return; }
+        msg.textContent = '点一首就能听 30 秒试听。';
+        list.forEach(function (x) {
+          var li = document.createElement('li');
+          var name = document.createElement('span'); name.className = 'rt'; name.textContent = x.trackName + ' — ' + x.artistName;
+          var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '试听';
+          li.appendChild(name); li.appendChild(tag);
+          li.addEventListener('click', function () {
+            var t = { title: x.trackName, artist: x.artistName, src: x.previewUrl, loop: false, preview: true };
+            var idx = -1;
+            for (var k = 0; k < tracks.length; k++) { if (tracks[k].src === t.src) { idx = k; break; } }
+            if (idx === -1) { tracks.push(t); idx = tracks.length - 1; }
+            load(idx); playCurrent();
+          });
+          resultsEl.appendChild(li);
+        });
+      })
+      .catch(function () { msg.textContent = '搜不到，可能是网络问题，换个关键词再试。'; });
+  }
+  document.getElementById('musicSearchBtn').addEventListener('click', doSearch);
+  searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  document.getElementById('musicFile').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    var t = { title: f.name.replace(/\.[^.]+$/, ''), artist: '本地文件', src: url, loop: false, preview: false };
+    tracks.push(t);
+    load(tracks.length - 1); playCurrent();
+    msg.textContent = '正在播放本地音乐：' + f.name;
+  });
+  if (!restoreState()) load(0);
+})();
+</script>
+</body>
+</html>

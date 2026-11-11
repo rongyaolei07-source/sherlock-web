@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旅途记录 · 蛋仔导航网</title>
+<meta name="description" content="一张中国卫星地图，点亮你去过的城市。注册后可以点亮、传照片、留言，看看有多少人和你去过同一个地方。">
+<meta name="theme-color" content="#060D1A">
+<link rel="icon" href="assets/danzi-cup-noodle.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Noto+Serif+SC:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js" defer></script>
+<style>
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+</style>
+<style>
+  :root {
+    --bg: #060D1A;
+    --text: #FFFFFF; --text-2: #B8C6D8; --text-3: #7C8FA8;
+    --gold: #E8B93C; --blue: #3B82F6; --teal: #7EF0E0;
+    --glass-bg: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.04));
+    --glass-border: 1px solid rgba(255,255,255,0.16);
+    --glass-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text); background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    height: 100vh; height: 100dvh; overflow: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+  [hidden] { display: none !important; }
+
+  /* 液态玻璃：半透明 + 模糊 + 内高光 */
+  .glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+    border: var(--glass-border);
+    border-radius: 20px;
+    box-shadow: var(--glass-shadow);
+  }
+  .icon { width: 24px; height: 24px; flex: none; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 8px 12px; border-radius: 12px; border: 1px solid transparent;
+    font: inherit; font-size: 16px; line-height: 24px; font-weight: 600;
+    text-decoration: none; cursor: pointer; white-space: nowrap;
+    transition: background-color 300ms var(--ease), transform 300ms var(--ease), border-color 300ms var(--ease), opacity 300ms var(--ease);
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+  .btn-primary { background: var(--gold); color: #181818; }
+  .btn-primary:hover { background: #F0C44E; }
+  .btn-blue { background: var(--blue); color: #fff; border-radius: 999px; padding: 10px 20px; }
+  .btn-blue:hover { background: #5B93F7; }
+  .btn-ghost { background: rgba(255,255,255,0.06); color: var(--text); border-color: rgba(255,255,255,0.16); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.32); }
+  .btn .icon { width: 20px; height: 20px; }
+
+  /* 全屏卫星地图 */
+  #map { position: fixed; inset: 0; z-index: 0; background: #0A1628; }
+
+  /* 顶部玻璃条 */
+  .topbar {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    width: min(1240px, calc(100% - 32px)); z-index: 1000;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 999px;
+  }
+  .brand { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; flex: none; }
+  .brand .icon { width: 24px; height: 24px; color: var(--gold); }
+  .brand span { font-size: 16px; line-height: 24px; font-weight: 600; }
+  #topApp { display: contents; }
+  .search { position: relative; flex: 1; min-width: 160px; }
+  .search input {
+    display: block; width: 100%;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 999px;
+    padding: 10px 16px; font: inherit; font-size: 16px; line-height: 24px; color: var(--text);
+    outline: none; transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+  }
+  .search input::placeholder { color: var(--text-3); }
+  .search input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232, 185, 60, 0.2); }
+  .suggest {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 20;
+    border-radius: 16px; overflow: hidden; display: none;
+  }
+  .suggest.open { display: block; }
+  .suggest button {
+    display: flex; justify-content: space-between; gap: 16px; width: 100%;
+    padding: 12px 16px; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.1);
+    color: var(--text); font: inherit; font-size: 16px; line-height: 24px; text-align: left; cursor: pointer;
+  }
+  .suggest button:last-child { border-bottom: none; }
+  .suggest button:hover { background: rgba(255,255,255,0.08); }
+  .suggest button span:last-child { color: var(--text-2); font-size: 14px; }
+  .seg { display: flex; background: rgba(255,255,255,0.08); border-radius: 999px; padding: 4px; flex: none; }
+  .seg button {
+    padding: 6px 12px; border-radius: 999px; border: none;
+    background: transparent; color: var(--text-2); font: inherit;
+    font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .seg button.active { background: rgba(255,255,255,0.16); color: var(--text); }
+  .who { font-size: 14px; line-height: 20px; color: var(--text-2); white-space: nowrap; }
+
+  /* 左侧玻璃 hero */
+  .hero {
+    position: fixed; left: 32px; top: 50%; transform: translateY(-50%);
+    z-index: 900; max-width: 400px; padding: 32px;
+  }
+  .hero .eyebrow { font-size: 12px; line-height: 16px; letter-spacing: 0.18em; color: var(--gold); font-weight: 600; }
+  .hero h1 {
+    font-family: "Noto Serif SC", "Songti SC", serif;
+    font-size: 40px; line-height: 52px; font-weight: 600; margin: 12px 0 16px; text-wrap: balance;
+  }
+  .hero p { margin: 0 0 24px; font-size: 16px; line-height: 24px; color: var(--text-2); }
+  .hero-close {
+    position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06);
+    color: var(--text-2); font-size: 18px; line-height: 1; cursor: pointer;
+  }
+  .hero-close:hover { color: var(--text); }
+
+  /* 底部玻璃条：统计 + 我的足迹 */
+  .bottombar {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    width: min(1100px, calc(100% - 32px)); z-index: 900;
+    display: flex; align-items: center; gap: 20px; padding: 14px 20px;
+  }
+  .stats-mini { display: flex; gap: 20px; flex: none; }
+  .stat-mini .num { font-size: 24px; line-height: 28px; font-weight: 600; }
+  .stat-mini p { margin: 2px 0 0; font-size: 12px; line-height: 16px; color: var(--text-3); }
+  .divider { width: 1px; align-self: stretch; background: rgba(255,255,255,0.14); flex: none; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding-bottom: 2px; }
+  .chip-btn {
+    padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.08); color: var(--text); font: inherit;
+    text-align: left; cursor: pointer; flex: none;
+    transition: border-color 300ms var(--ease);
+  }
+  .chip-btn:hover { border-color: var(--gold); }
+  .chip-btn b { display: block; font-size: 14px; line-height: 20px; font-weight: 600; }
+  .chip-btn span { font-size: 12px; line-height: 16px; color: var(--text-3); }
+  .chips-empty { font-size: 14px; line-height: 20px; color: var(--text-3); white-space: nowrap; align-self: center; }
+
+  /* 右侧玻璃城市卡片 */
+  .city-panel {
+    position: fixed; right: 24px; top: 96px; bottom: 96px; width: 400px; z-index: 950;
+    padding: 24px; overflow-y: auto;
+  }
+  .city-panel h2 { font-size: 28px; line-height: 34px; font-weight: 600; margin: 0; }
+  .city-panel .sub { margin: 8px 0 0; font-size: 16px; line-height: 24px; color: var(--text-2); }
+  .city-meta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 16px 0; }
+  .city-meta .count { font-size: 18px; line-height: 28px; font-weight: 600; }
+  .city-meta .count b { color: var(--gold); }
+  .date-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 0 0 16px; }
+  .date-row label { font-size: 14px; line-height: 20px; color: var(--text-2); }
+  .date-row input[type="date"] {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px;
+    padding: 8px 10px; color: var(--text); font: inherit; font-size: 14px; line-height: 20px; color-scheme: dark;
+  }
+  .my-date { font-size: 14px; line-height: 20px; color: var(--text-2); margin: 0 0 16px; }
+  .my-date b { color: var(--gold); }
+  .city-users { font-size: 14px; line-height: 20px; color: var(--text-2); margin: 0 0 8px; }
+  .subhead { font-size: 18px; line-height: 28px; font-weight: 500; margin: 24px 0 12px; }
+  .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .photos a { display: block; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.14); aspect-ratio: 1; }
+  .photos img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-by { font-size: 12px; line-height: 16px; color: var(--text-3); margin-top: 6px; grid-column: 1 / -1; }
+  .upload-row { margin-top: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .messages { display: flex; flex-direction: column; gap: 12px; }
+  .message { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; }
+  .message .who2 { font-size: 14px; line-height: 20px; font-weight: 600; margin-bottom: 4px; }
+  .message .who2 span { color: var(--text-3); font-weight: 400; margin-left: 8px; }
+  .message p { margin: 0; font-size: 15px; line-height: 22px; color: var(--text-2); }
+  .empty { color: var(--text-3); font-size: 14px; line-height: 20px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; margin: 0 0 8px; font-size: 16px; line-height: 24px; font-weight: 600; }
+  .field input, .field textarea {
+    display: block; width: 100%;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 8px;
+    padding: 12px; font: inherit; font-size: 16px; line-height: 24px; color: var(--text);
+    outline: none; transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+  }
+  .field input::placeholder, .field textarea::placeholder { color: var(--text-3); }
+  .field input:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(232, 185, 60, 0.2); }
+  .field textarea { min-height: 72px; resize: vertical; }
+  .msg { margin: 12px 0 0; font-size: 14px; line-height: 20px; min-height: 20px; color: var(--text-2); }
+  .msg.err { color: #FCA5A5; }
+  .msg.ok { color: #4ADE80; font-weight: 600; }
+  .remember { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; font-size: 14px; line-height: 20px; color: var(--text-2); cursor: pointer; }
+  .remember input { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; }
+
+  /* 顶栏收起：只剩一个蛋仔小圆钮，不挡地图 */
+  .collapse-btn { flex: none; width: 36px; height: 36px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+  .collapse-btn svg { width: 18px; height: 18px; }
+  .bottombar .collapse-btn { align-self: center; margin-left: auto; }
+  .topbar.collapsed { width: auto; padding: 6px; border-radius: 999px; gap: 6px; }
+  /* 注意：#topApp 是 ID 选择器，.collapsed > * 的优先级不够，必须单独用 ID 覆盖 */
+  .topbar.collapsed #topApp { display: none; }
+  .topbar.collapsed > a.btn { display: none; }
+  .topbar.collapsed .brand span { display: none; }
+  .topbar.collapsed .collapse-btn svg { transform: rotate(180deg); }
+
+  /* 底部栏收起：滑下去，只留一个小药丸 */
+  .bottombar { transition: transform 500ms var(--ease), opacity 500ms var(--ease); }
+  .bottombar.collapsed { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
+  .bottom-expand {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 950;
+    display: none; align-items: center; gap: 6px; white-space: nowrap;
+  }
+  .bottom-expand.show { display: inline-flex; }
+
+  /* 城市面板：底部抽屉的拖拽条，下拉关闭（触摸区加高到 26px，手指好按） */
+  .sheet-handle { display: none; width: 100%; padding: 12px 0 8px; touch-action: none; cursor: grab; flex: none; }
+  .sheet-handle .sheet-bar { display: block; width: 56px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.45); margin: 0 auto; }
+  @media (max-width: 720px) { .sheet-handle { display: block; } }
+  body.portrait .sheet-handle { display: block; }
+  /* 收起后只留一条 72px 的 peek 条（横条 + 城市名 + 上箭头），点它就展开 */
+  .city-panel { transition: transform 500ms var(--ease); }
+  .sheet-peek { display: none; align-items: center; justify-content: center; gap: 6px; font-size: 15px; line-height: 22px; font-weight: 600; cursor: pointer; }
+  .sheet-peek .peek-chev { color: var(--gold); font-size: 18px; line-height: 1; }
+  body.portrait .city-panel.collapsed { transform: translateY(calc(100% - 72px)); }
+  body.portrait .city-panel.collapsed .sheet-peek { display: flex; }
+  body.portrait .city-panel.collapsed .city-close { display: none; }
+  .city-intro { margin: 12px 0 0; font-size: 15px; line-height: 24px; color: var(--text-2); }
+  /* 横屏版：收起后在右上角留一个小标签，点它重新打开 */
+  .city-tab {
+    position: fixed; right: 24px; top: 96px; z-index: 950;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 14px; border-radius: 999px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .city-tab[hidden] { display: none; }
+
+  /* 蛋仔元素：蛋仔带你游中国 + 派对小彩蛋 */
+  .danzi-line { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .danzi-line img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(232,185,60,0.6); flex: none; }
+  .danzi-line span { font-size: 15px; line-height: 22px; font-weight: 600; color: var(--gold); }
+  .danzi-mini { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; vertical-align: -8px; margin-right: 6px; border: 1.5px solid rgba(232,185,60,0.6); }
+  .party { display: flex; gap: 10px; align-items: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px dashed rgba(255,255,255,0.12); }
+  .party .egg { width: 18px; height: 22px; border-radius: 50% 50% 50% 50% / 58% 58% 42% 42%; animation: egg-bob 2.4s ease-in-out infinite; }
+  .party .egg:nth-child(1) { background: #FDE68A; }
+  .party .egg:nth-child(2) { background: #FCA5A5; animation-delay: 0.3s; }
+  .party .egg:nth-child(3) { background: #93C5FD; animation-delay: 0.6s; }
+  .party .egg:nth-child(4) { background: #86EFAC; animation-delay: 0.9s; }
+  .party .egg:nth-child(5) { background: #F0ABFC; animation-delay: 1.2s; }
+  .party .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-bottom: 6px; animation: egg-bob 2.4s ease-in-out infinite; animation-delay: 0.15s; }
+  @keyframes egg-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .city-close {
+    position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06);
+    color: var(--text-2); font-size: 18px; line-height: 1; cursor: pointer; z-index: 2;
+  }
+  .city-close:hover { color: var(--text); }
+
+  /* 登录 / 注册：居中玻璃卡 */
+  .auth-scrim { position: fixed; inset: 0; z-index: 1100; background: rgba(4,10,20,0.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .auth-card {
+    position: fixed; z-index: 1200; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: min(440px, calc(100% - 32px)); padding: 32px; max-height: calc(100dvh - 48px); overflow-y: auto;
+  }
+  .auth-card h1 { font-size: 24px; line-height: 32px; font-weight: 600; margin: 0 0 8px; }
+  .auth-card .hint { font-size: 14px; line-height: 20px; color: var(--text-2); margin: 0 0 24px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+  .tab {
+    flex: 1; padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14);
+    background: transparent; color: var(--text-2); font: inherit;
+    font-size: 16px; line-height: 24px; font-weight: 600; cursor: pointer;
+    transition: background-color 300ms var(--ease), color 300ms var(--ease), border-color 300ms var(--ease);
+  }
+  .tab.active { background: rgba(255,255,255,0.12); color: var(--text); border-color: rgba(255,255,255,0.32); }
+  .captcha-row { display: flex; gap: 12px; align-items: stretch; }
+  .captcha-row img { width: 160px; height: 60px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.14); cursor: pointer; flex: none; }
+  .captcha-row input { flex: 1; min-width: 0; }
+  .wide { display: block; width: 100%; margin-top: 8px; }
+  .note { margin-top: 16px; font-size: 14px; line-height: 20px; color: var(--text-2); }
+
+  /* 3D 地球开场 */
+  #globeWrap { position: fixed; inset: 0; z-index: 1050; background: #060D1A; transition: opacity 800ms var(--ease); }
+  #globeWrap.globe-off { opacity: 0; pointer-events: none; }
+  #globeViz { position: absolute; inset: 0; }
+  #globeViz canvas { display: block; }
+  .globe-top {
+    position: absolute; top: 16px; left: 0; right: 0; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+  }
+  .globe-hero {
+    position: absolute; left: 32px; top: 50%; transform: translateY(-50%);
+    z-index: 2; max-width: 420px; padding: 32px;
+  }
+  .globe-hero .eyebrow { font-size: 12px; line-height: 16px; letter-spacing: 0.18em; color: var(--gold); font-weight: 600; }
+  .globe-hero h1 { font-family: "Noto Serif SC", "Songti SC", serif; font-size: 40px; line-height: 52px; font-weight: 600; margin: 12px 0 16px; text-wrap: balance; }
+  .globe-hero p { margin: 0 0 24px; font-size: 16px; line-height: 24px; color: var(--text-2); }
+  .globe-loading { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2; font-size: 14px; line-height: 20px; color: var(--text-3); }
+  @media (max-width: 720px) {
+    .globe-hero { left: 16px; right: 16px; top: auto; bottom: 32px; transform: none; max-width: none; padding: 20px; }
+    .globe-hero h1 { font-size: 28px; line-height: 36px; }
+  }
+
+  /* Leaflet 控件改成玻璃风 */
+  .leaflet-container { background: #0A1628; font: inherit; }
+  .leaflet-control-zoom { border: none !important; box-shadow: var(--glass-shadow) !important; border-radius: 12px !important; overflow: hidden; }
+  .leaflet-control-zoom a {
+    background: rgba(13,27,48,0.72) !important; color: #fff !important;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.12) !important; width: 36px !important; height: 36px !important; line-height: 36px !important;
+  }
+  .leaflet-control-attribution {
+    background: rgba(6,13,26,0.6) !important; color: #7C8FA8 !important;
+    font-size: 10px !important; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  .leaflet-control-attribution a { color: #9BB0C8 !important; }
+  .leaflet-tooltip {
+    background: rgba(13,27,48,0.88) !important; border: 1px solid rgba(255,255,255,0.16) !important;
+    color: #fff !important; border-radius: 10px !important; box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+  .leaflet-tooltip:before { display: none; }
+
+  /* 竖屏版：手机式布局 */
+  body.portrait .hero { left: 16px; right: 16px; top: 240px; transform: none; max-width: none; padding: 20px; }
+  body.portrait .hero h1 { font-size: 24px; line-height: 32px; margin: 8px 0 0; }
+  body.portrait .hero p, body.portrait .hero .btn-blue { display: none; }
+  body.portrait .bottombar { flex-direction: column; align-items: stretch; gap: 12px; }
+  body.portrait .bottombar .divider { display: none; }
+  body.portrait .city-panel {
+    left: 0; right: 0; bottom: 0; top: auto; width: auto;
+    max-height: 62dvh; border-radius: 24px 24px 0 0;
+  }
+
+  @media (max-width: 720px) {
+    .topbar { flex-wrap: wrap; border-radius: 20px; padding: 8px 10px; gap: 8px; }
+    .topbar .search { order: 3; flex-basis: 100%; }
+    .who { display: none; }
+    .hero { left: 16px; right: 16px; top: 240px; transform: none; max-width: none; padding: 20px; }
+    .hero h1 { font-size: 24px; line-height: 32px; margin: 8px 0 0; }
+    .hero p, .hero .btn-blue { display: none; }
+    .bottombar { flex-direction: column; align-items: stretch; gap: 12px; }
+    .bottombar .divider { display: none; }
+    .city-panel { left: 0; right: 0; bottom: 0; top: auto; width: auto; max-height: 62dvh; border-radius: 24px 24px 0 0; }
+    .stats-mini { gap: 16px; }
+    .stat-mini .num { font-size: 20px; line-height: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+  /* 音乐播放器（和首页同一个，跨页续播：进度和播放状态存在 localStorage） */
+  .music-fab {
+    position: fixed; right: 20px; bottom: 20px; z-index: 1150;
+    width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(232,185,60,0.45);
+    background: #1F1F1F; color: #E8B93C; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; line-height: 1;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    animation: music-pulse 2.4s ease-in-out infinite;
+  }
+  .music-fab.playing { animation: none; }
+  @keyframes music-pulse { 0%, 100% { box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 0 rgba(232,185,60,0.35); } 50% { box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 10px rgba(232,185,60,0); } }
+  .music-panel {
+    position: fixed; right: 20px; bottom: 88px; z-index: 1150;
+    width: min(340px, calc(100vw - 32px));
+    background: #1F1F1F; border: 1px solid #313131; border-radius: 16px;
+    padding: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+    color: #F5F5F5;
+  }
+  .music-panel[hidden] { display: none; }
+  .music-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .music-head b { font-size: 15px; }
+  .music-head button { background: none; border: none; color: #A3A3A3; font-size: 20px; cursor: pointer; line-height: 1; padding: 4px; }
+  .music-track { margin-bottom: 12px; }
+  .music-track .t { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .music-track .a { font-size: 13px; color: #A3A3A3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .music-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .music-controls .ctl { background: #272727; border: 1px solid #313131; color: #F5F5F5; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 15px; }
+  .music-controls .play { width: 48px; height: 48px; background: #E8B93C; border-color: #E8B93C; color: #111; font-size: 20px; }
+  .music-progress { flex: 1; height: 6px; border-radius: 999px; background: #313131; cursor: pointer; position: relative; overflow: hidden; }
+  .music-progress .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; background: #E8B93C; border-radius: 999px; }
+  .music-time { font-size: 12px; color: #A3A3A3; white-space: nowrap; }
+  .music-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .music-row input {
+    flex: 1; min-width: 0; background: #272727; border: 1px solid #313131; border-radius: 8px;
+    padding: 9px 12px; font: inherit; font-size: 14px; color: #F5F5F5; outline: none;
+  }
+  .music-row input:focus { border-color: #E8B93C; }
+  .music-row input::placeholder { color: #737373; }
+  .music-results { max-height: 180px; overflow-y: auto; margin: 0 0 10px; padding: 0; list-style: none; }
+  .music-results li { display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .music-results li:hover { background: #272727; }
+  .music-results li .rt { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .music-results li .tag { flex: none; font-size: 11px; color: #E8B93C; border: 1px solid rgba(232,185,60,0.5); border-radius: 999px; padding: 1px 7px; }
+  .music-msg { font-size: 13px; color: #A3A3A3; min-height: 18px; margin: 0 0 8px; }
+  .music-foot { display: flex; align-items: center; gap: 10px; }
+  .music-foot label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #A3A3A3; cursor: pointer; white-space: nowrap; }
+  .music-foot input[type="range"] { flex: 1; accent-color: #E8B93C; }
+</style>
+</head>
+<body>
+<div id="map" aria-label="中国卫星地图"></div>
+
+<header class="glass topbar">
+  <a class="brand" href="/">
+    <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M186.66,59.56C168.47,32.29,146.54,16,128,16S87.53,32.29,69.34,59.56C50.7,87.54,40,121.23,40,152a88,88,0,0,0,176,0C216,121.23,205.3,87.54,186.66,59.56ZM128,224a72.08,72.08,0,0,1-72-72c0-27.69,9.72-58.15,26.66-83.56C97.19,46.64,115.41,32,128,32s30.81,14.64,45.34,36.44C190.28,93.85,200,124.31,200,152A72.08,72.08,0,0,1,128,224Z"/></svg>
+    <span>蛋仔导航网</span>
+  </a>
+  <div id="topApp" hidden>
+    <div class="search">
+      <input id="citySearch" type="text" autocomplete="off" placeholder="搜一个城市，比如丹寨、贵阳、香港…">
+      <div class="suggest glass" id="suggest"></div>
+    </div>
+    <div class="seg" role="group" aria-label="版式选择">
+      <button id="layoutLandscape" type="button">横屏版</button>
+      <button id="layoutPortrait" type="button">竖屏版</button>
+    </div>
+    <button class="btn btn-ghost" id="globeToggleBtn" type="button"><svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,24h0A104,104,0,1,0,232,128,104.12,104.12,0,0,0,128,24Zm88,104a87.61,87.61,0,0,1-3.33,24H174.16a157.44,157.44,0,0,0,0-48h38.51A87.61,87.61,0,0,1,216,128ZM102,168H154a115.11,115.11,0,0,1-26,45A115.27,115.27,0,0,1,102,168Zm-3.9-16a140.84,140.84,0,0,1,0-48h59.88a140.84,140.84,0,0,1,0,48ZM40,128a87.61,87.61,0,0,1,3.33-24H81.84a157.44,157.44,0,0,0,0,48H43.33A87.61,87.61,0,0,1,40,128ZM154,88H102a115.11,115.11,0,0,1,26-45A115.27,115.27,0,0,1,154,88Zm52.33,0H170.71a135.28,135.28,0,0,0-22.3-45.6A88.29,88.29,0,0,1,206.37,88ZM107.59,42.4A135.28,135.28,0,0,0,85.29,88H49.63A88.29,88.29,0,0,1,107.59,42.4ZM49.63,168H85.29a135.28,135.28,0,0,0,22.3,45.6A88.29,88.29,0,0,1,49.63,168Zm98.78,45.6a135.28,135.28,0,0,0,22.3-45.6h35.66A88.29,88.29,0,0,1,148.41,213.6Z"/></svg>3D 地球</button>
+    <span class="who" id="whoText" hidden></span>
+    <button class="btn btn-ghost" id="logoutBtn" type="button" hidden>退出</button>
+  </div>
+  <a class="btn btn-ghost" href="/">回首页</a>
+  <button class="btn btn-ghost collapse-btn" id="topbarCollapse" type="button" aria-label="收起顶栏"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,80a8,8,0,0,1,5.66,2.34l48,48a8,8,0,0,1-11.32,11.32L128,99.31,85.66,141.66A8,8,0,0,1,74.34,130.34l48-48A8,8,0,0,1,128,80Z"/></svg></button>
+</header>
+
+<div id="globeWrap" hidden>
+  <div id="globeViz"></div>
+  <div class="globe-top">
+    <a class="brand" href="/">
+      <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M186.66,59.56C168.47,32.29,146.54,16,128,16S87.53,32.29,69.34,59.56C50.7,87.54,40,121.23,40,152a88,88,0,0,0,176,0C216,121.23,205.3,87.54,186.66,59.56ZM128,224a72.08,72.08,0,0,1-72-72c0-27.69,9.72-58.15,26.66-83.56C97.19,46.64,115.41,32,128,32s30.81,14.64,45.34,36.44C190.28,93.85,200,124.31,200,152A72.08,72.08,0,0,1,128,224Z"/></svg>
+      <span>蛋仔导航网</span>
+    </a>
+    <button class="btn btn-ghost" id="globeLoginBtn" type="button" hidden>登录 / 注册</button>
+  </div>
+  <div class="glass globe-hero">
+    <div class="eyebrow">JOURNEY · MY PRIVATE ATLAS</div>
+    <h1>探索世界，<br>收藏所有的美好</h1>
+    <div class="danzi-line"><img src="assets/danzi-cup-noodle.jpg" alt="蛋仔"><span>蛋仔带你游中国</span></div>
+    <p>一张中国卫星地图，点亮你去过的城市，留下照片和一句话。</p>
+    <button class="btn btn-blue" id="globeExploreBtn" type="button">开始探索</button>
+    <div class="party" aria-hidden="true"><span class="egg"></span><span class="egg"></span><span class="egg"></span><span class="egg"></span><span class="egg"></span><span class="dot"></span><span class="dot"></span></div>
+  </div>
+  <div class="globe-loading" id="globeLoading">地球加载中…</div>
+</div>
+
+<div id="appView" hidden>
+  <aside class="glass hero" id="heroPanel">
+    <button class="hero-close" id="heroClose" type="button" aria-label="收起">×</button>
+    <div class="eyebrow">JOURNEY · MY PRIVATE ATLAS</div>
+    <h1>探索世界，<br>收藏所有的美好</h1>
+    <div class="danzi-line"><img src="assets/danzi-cup-noodle.jpg" alt="蛋仔"><span>蛋仔带你游中国</span></div>
+    <p>点亮你去过的城市，留下照片和一句话，看看有多少人和你去过同一个地方。</p>
+    <button class="btn btn-blue" id="exploreBtn" type="button">开始探索</button>
+    <div class="party" aria-hidden="true"><span class="egg"></span><span class="egg"></span><span class="egg"></span><span class="egg"></span><span class="egg"></span><span class="dot"></span><span class="dot"></span></div>
+  </aside>
+
+  <div class="glass bottombar">
+    <div class="stats-mini">
+      <div class="stat-mini"><div class="num" id="statUsers">…</div><p>位注册用户</p></div>
+      <div class="stat-mini"><div class="num" id="statCities">…</div><p>个城市被点亮</p></div>
+      <div class="stat-mini"><div class="num" id="statPhotos">…</div><p>张照片</p></div>
+      <div class="stat-mini"><div class="num" id="statMessages">…</div><p>条留言</p></div>
+    </div>
+    <div class="divider"></div>
+    <div class="chips" id="myChips"></div>
+    <span class="chips-empty" id="myEmpty"><img class="danzi-mini" src="assets/danzi-cup-noodle.jpg" alt="">还没有点亮任何城市，在上面搜一个城市，点亮它。</span>
+    <button class="btn btn-ghost collapse-btn" id="bottomCollapse" type="button" aria-label="收起底部栏"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M128,176a8,8,0,0,1-5.66-2.34l-48-48A8,8,0,0,1,85.66,98.34L128,140.69l42.34-42.35a8,8,0,0,1,11.32,11.32l-48,48A8,8,0,0,1,128,176Z"/></svg></button>
+  </div>
+  <button class="glass bottom-expand" id="bottomExpand" type="button"><svg viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" style="width:16px;height:16px"><path d="M128,80a8,8,0,0,1,5.66,2.34l48,48a8,8,0,0,1-11.32,11.32L128,99.31,85.66,141.66A8,8,0,0,1,74.34,130.34l48-48A8,8,0,0,1,128,80Z"/></svg>我的足迹</button>
+  <button class="glass city-tab" id="cityPanelTab" type="button" hidden><span id="cityTabName">城市</span>‹</button>
+
+  <section class="glass city-panel" id="cityPanel" hidden>
+    <div class="sheet-handle" id="sheetHandle"><span class="sheet-bar"></span></div>
+    <div class="sheet-peek" id="sheetPeek"><span id="sheetPeekName">城市</span><span class="peek-chev">⌃</span></div>
+    <button class="city-close" id="cityClose" type="button" aria-label="收起">×</button>
+    <h2 id="cityName">城市</h2>
+    <p class="sub" id="citySub"></p>
+    <p class="city-intro" id="cityIntro" hidden></p>
+    <div class="city-meta">
+      <span class="count"><b id="cityCount">0</b> 个人去过</span>
+    </div>
+    <div class="date-row">
+      <label for="visitDate">游玩日期</label>
+      <input id="visitDate" type="date">
+      <button class="btn btn-ghost" id="updateDateBtn" type="button" hidden>更新日期</button>
+    </div>
+    <p class="my-date" id="myDateLine" hidden></p>
+    <button class="btn btn-primary" id="toggleBtn" type="button">点亮这个城市</button>
+    <p class="city-users" id="cityUsers" style="margin-top: 12px;"></p>
+
+    <h3 class="subhead">照片</h3>
+    <div class="photos" id="photoGrid"></div>
+    <p class="empty" id="photoEmpty">还没有人传照片。</p>
+    <div class="upload-row">
+      <label class="btn btn-ghost" for="photoInput">上传一张照片</label>
+      <input id="photoInput" type="file" accept="image/jpeg,image/png" hidden>
+      <span class="empty" id="photoMsg"></span>
+    </div>
+
+    <h3 class="subhead">留言</h3>
+    <div class="messages" id="msgList"></div>
+    <p class="empty" id="msgEmpty">还没有人留言，来留第一条吧。</p>
+    <div class="field" style="margin-top: 16px;">
+      <textarea id="msgText" maxlength="200" rows="2" placeholder="在这个城市留一句话，200 字以内。"></textarea>
+    </div>
+    <button class="btn btn-primary" id="sendMsgBtn" type="button">发送留言</button>
+    <p class="msg" id="msgFormMsg" role="status"></p>
+    <p class="empty" style="margin-top: 24px;">用户名、照片和留言会显示给其他登录的人，请不要在里面放密码、手机号和地址。</p>
+  </section>
+</div>
+
+<!-- 未登录：玻璃登录 / 注册卡 -->
+<div id="authView" hidden>
+  <div class="auth-scrim"></div>
+  <div class="glass auth-card">
+    <div class="danzi-line"><img src="assets/danzi-cup-noodle.jpg" alt="蛋仔"><span>蛋仔带你游中国</span></div>
+    <h1>旅途记录</h1>
+    <p class="hint">一张中国卫星地图，点亮你去过的城市。先登录或注册，再开始探索。</p>
+    <div class="tabs" role="tablist">
+      <button class="tab active" id="tabLogin" type="button">登录</button>
+      <button class="tab" id="tabRegister" type="button">注册</button>
+    </div>
+    <form id="loginForm">
+      <div class="field">
+        <label for="loginUser">用户名</label>
+        <input id="loginUser" name="username" type="text" autocomplete="username" placeholder="注册时用的用户名">
+      </div>
+      <div class="field">
+        <label for="loginPass">密码</label>
+        <input id="loginPass" name="password" type="password" autocomplete="current-password" placeholder="密码">
+      </div>
+      <label class="remember"><input type="checkbox" id="rememberMe" checked> 记住登录（180 天内不用再登录）</label>
+      <button class="btn btn-primary wide" type="submit" id="loginBtn">登录</button>
+      <p class="msg" id="loginMsg" role="status"></p>
+    </form>
+    <form id="registerForm" hidden>
+      <div class="field">
+        <label for="regUser">用户名</label>
+        <input id="regUser" name="username" type="text" autocomplete="username" placeholder="2–20 个字，中文、字母、数字、下划线">
+      </div>
+      <div class="field">
+        <label for="regPass">密码</label>
+        <input id="regPass" name="password" type="password" autocomplete="new-password" placeholder="6–64 位">
+      </div>
+      <div class="field">
+        <label for="captchaInput">图片验证码</label>
+        <div class="captcha-row">
+          <img id="captchaImg" alt="图片验证码，点一下换一张" title="点一下换一张">
+          <input id="captchaInput" name="captcha" type="text" inputmode="text" autocomplete="off" placeholder="输入图中的 4 个字符" maxlength="4">
+        </div>
+      </div>
+      <button class="btn btn-primary wide" type="submit" id="regBtn">注册并进入</button>
+      <p class="msg" id="regMsg" role="status"></p>
+      <p class="note">用户名会显示给其他登录的人。密码只存加密后的结果，站长也看不到原文。</p>
+    </form>
+  </div>
+</div>
+
+<!-- 音乐播放器 -->
+<button class="music-fab" id="musicFab" type="button" aria-label="打开音乐播放器">♪</button>
+<div class="music-panel" id="musicPanel" hidden>
+  <div class="music-head"><b>音乐</b><button id="musicClose" type="button" aria-label="收起">×</button></div>
+  <div class="music-track"><div class="t" id="musicTitle">蛋仔派对卡农</div><div class="a" id="musicArtist">蛋蛋黑</div></div>
+  <div class="music-controls">
+    <button class="ctl" id="musicPrev" type="button" aria-label="上一首">⏮</button>
+    <button class="ctl play" id="musicPlay" type="button" aria-label="播放">▶</button>
+    <button class="ctl" id="musicNext" type="button" aria-label="下一首">⏭</button>
+    <div class="music-progress" id="musicProgress"><div class="fill" id="musicFill"></div></div>
+    <span class="music-time" id="musicTime">0:00 / 2:16</span>
+  </div>
+  <div class="music-row">
+    <input id="musicSearch" type="search" placeholder="搜一首歌，比如 周杰伦" autocomplete="off">
+    <button class="btn btn-primary" id="musicSearchBtn" type="button">搜索</button>
+  </div>
+  <ul class="music-results" id="musicResults"></ul>
+  <p class="music-msg" id="musicMsg">点 ▶ 播放蛋仔派对卡农；搜到的歌是 30 秒试听。</p>
+  <div class="music-foot">
+    <label for="musicFile">本地音乐</label>
+    <input id="musicFile" type="file" accept="audio/*" hidden>
+    <input id="musicVol" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="音量">
+  </div>
+</div>
+<audio id="bgmAudio" preload="metadata"></audio>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function todayStr() { return new Date().toISOString().slice(0, 10); }
+  function fmtDate(d) {
+    if (!d) return '';
+    var p = d.split('-');
+    return p[0] + '年' + (+p[1]) + '月' + (+p[2]) + '日';
+  }
+  function fmtTime(at) {
+    return new Date(at).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  async function api(path, opts) {
+    var res = await fetch(path, opts);
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || ('请求失败（' + res.status + '）'));
+    return data;
+  }
+  function postJson(path, body) {
+    return api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  }
+
+  var me = null;
+  var cities = null; // name -> {coord, province, prefecture}
+  var cityNames = [];
+  var counts = {};
+  var mine = new Set();
+  var myDates = new Map(); // city -> 游玩日期 YYYY-MM-DD
+  var selected = null;
+  var captchaToken = '';
+
+  /* ---------- 卫星地图 ---------- */
+  var map = L.map('map', {
+    zoomControl: false,
+    attributionControl: true,
+    minZoom: 3,
+    maxZoom: 12,
+    worldCopyJump: true,
+  }).setView([35.8, 104.5], 4);
+  L.tileLayer('https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    maxZoom: 18,
+    attribution: '© 高德地图 AutoNavi',
+  }).addTo(map);
+  L.tileLayer('https://webst0{s}.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}', {
+    subdomains: '1234',
+    maxZoom: 18,
+    attribution: '',
+  }).addTo(map);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  var markersLayer = L.layerGroup().addTo(map);
+  var routeLayer = L.layerGroup().addTo(map);
+
+  function latLngOf(name) {
+    var c = cities[name];
+    return c ? [c.coord[1], c.coord[0]] : null;
+  }
+  function renderMarkers() {
+    markersLayer.clearLayers();
+    Object.keys(counts).forEach(function (name) {
+      var ll = latLngOf(name);
+      if (!ll) return;
+      var isMine = mine.has(name);
+      var n = counts[name];
+      var marker = L.circleMarker(ll, {
+        radius: isMine ? 9 : 6 + Math.min(n, 8),
+        color: isMine ? '#E8B93C' : '#7EF0E0',
+        weight: 2,
+        fillColor: isMine ? '#E8B93C' : '#7EF0E0',
+        fillOpacity: isMine ? 0.95 : 0.75,
+      });
+      marker.bindTooltip(name + ' · ' + n + ' 个人去过' + (isMine ? ' · 我去过' : ''));
+      marker.on('click', function () { selectCity(name); });
+      markersLayer.addLayer(marker);
+    });
+  }
+  // 我的足迹路线：按游玩日期从早到晚连起来，金色发光线。
+  function drawRoute() {
+    routeLayer.clearLayers();
+    var ordered = Array.from(mine)
+      .map(function (name) { return { name: name, d: myDates.get(name) || '' }; })
+      .sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; })
+      .map(function (x) { return latLngOf(x.name); })
+      .filter(Boolean);
+    if (ordered.length < 2) return;
+    routeLayer.addLayer(L.polyline(ordered, { color: '#E8B93C', weight: 10, opacity: 0.16 }));
+    routeLayer.addLayer(L.polyline(ordered, { color: '#E8B93C', weight: 2.5, opacity: 0.95 }));
+  }
+  function refreshMap() { renderMarkers(); drawRoute(); updateGlobeData(); }
+
+  /* ---------- 横屏 / 竖屏版式 ---------- */
+  var layoutLandscapeBtn = $('layoutLandscape'), layoutPortraitBtn = $('layoutPortrait');
+  function setLayout(mode) {
+    document.body.classList.toggle('portrait', mode === 'portrait');
+    layoutLandscapeBtn.classList.toggle('active', mode === 'landscape');
+    layoutPortraitBtn.classList.toggle('active', mode === 'portrait');
+    try { localStorage.setItem('journey-layout', mode); } catch (e) {}
+    map.invalidateSize();
+    setTimeout(function () { map.invalidateSize(); }, 350);
+  }
+  layoutLandscapeBtn.addEventListener('click', function () { setLayout('landscape'); });
+  layoutPortraitBtn.addEventListener('click', function () { setLayout('portrait'); });
+  (function initLayout() {
+    var saved = null;
+    try { saved = localStorage.getItem('journey-layout'); } catch (e) {}
+    setLayout(saved || (window.innerWidth <= 720 ? 'portrait' : 'landscape'));
+  })();
+  window.addEventListener('resize', function () { map.invalidateSize(); if (world) { world.width(window.innerWidth); world.height(window.innerHeight); } });
+
+  $('heroClose').addEventListener('click', function () { $('heroPanel').hidden = true; });
+
+  /* ---------- 城市面板：下滑收起（留一条可点开的 peek 条），不是关掉 ---------- */
+  var cityPanel = $('cityPanel');
+  function isSheetMode() { return document.body.classList.contains('portrait'); }
+  function collapseCityPanel() {
+    if (!selected) return;
+    if (isSheetMode()) {
+      cityPanel.classList.add('collapsed');
+    } else {
+      cityPanel.hidden = true;
+      $('cityTabName').textContent = selected;
+      $('cityPanelTab').hidden = false;
+    }
+  }
+  function expandCityPanel() {
+    cityPanel.classList.remove('collapsed');
+    cityPanel.hidden = false;
+    $('cityPanelTab').hidden = true;
+  }
+  $('cityClose').addEventListener('click', collapseCityPanel);
+  $('sheetPeek').addEventListener('click', expandCityPanel);
+  $('cityPanelTab').addEventListener('click', expandCityPanel);
+  // 拖住顶部小横条往下滑超过 100px 就收起；点一下横条也收起
+  var sheetHandle = $('sheetHandle'), sheetDrag = null;
+  sheetHandle.addEventListener('pointerdown', function (e) {
+    if (!isSheetMode()) return;
+    sheetDrag = { y0: e.clientY };
+    try { sheetHandle.setPointerCapture(e.pointerId); } catch (err) {}
+    cityPanel.style.transition = 'none';
+  });
+  sheetHandle.addEventListener('pointermove', function (e) {
+    if (!sheetDrag) return;
+    cityPanel.style.transform = 'translateY(' + Math.max(0, e.clientY - sheetDrag.y0) + 'px)';
+  });
+  function sheetDragEnd(e) {
+    if (!sheetDrag) return;
+    var dy = Math.max(0, e.clientY - sheetDrag.y0);
+    sheetDrag = null;
+    cityPanel.style.transition = '';
+    cityPanel.style.transform = '';
+    if (dy > 100) collapseCityPanel();
+  }
+  sheetHandle.addEventListener('pointerup', sheetDragEnd);
+  sheetHandle.addEventListener('pointercancel', sheetDragEnd);
+  sheetHandle.addEventListener('click', function () { if (isSheetMode()) collapseCityPanel(); });
+
+  /* ---------- 顶栏 / 底部栏收起，城市面板下拉关闭 ---------- */
+  var topbarEl = document.querySelector('.topbar');
+  var bottombarEl = document.querySelector('.bottombar');
+  function setTopbarCollapsed(c) {
+    topbarEl.classList.toggle('collapsed', c);
+    $('topbarCollapse').setAttribute('aria-label', c ? '展开顶栏' : '收起顶栏');
+    try { localStorage.setItem('journey-topbar-collapsed', c ? '1' : '0'); } catch (e) {}
+  }
+  function setBottombarCollapsed(c) {
+    bottombarEl.classList.toggle('collapsed', c);
+    $('bottomExpand').classList.toggle('show', c);
+    try { localStorage.setItem('journey-bottombar-collapsed', c ? '1' : '0'); } catch (e) {}
+  }
+  $('topbarCollapse').addEventListener('click', function () {
+    setTopbarCollapsed(!topbarEl.classList.contains('collapsed'));
+  });
+  $('bottomCollapse').addEventListener('click', function () { setBottombarCollapsed(true); });
+  $('bottomExpand').addEventListener('click', function () { setBottombarCollapsed(false); });
+  try {
+    if (localStorage.getItem('journey-topbar-collapsed') === '1') setTopbarCollapsed(true);
+    if (localStorage.getItem('journey-bottombar-collapsed') === '1') setBottombarCollapsed(true);
+  } catch (e) {}
+  $('exploreBtn').addEventListener('click', function () {
+    map.flyTo([35.8, 104.5], 4);
+    $('citySearch').focus();
+  });
+
+  /* ---------- 登录 / 注册 ---------- */
+  var authView = $('authView'), appView = $('appView');
+  var loginForm = $('loginForm'), registerForm = $('registerForm');
+  var tabLogin = $('tabLogin'), tabRegister = $('tabRegister');
+
+  function showTab(which) {
+    var isLogin = which === 'login';
+    tabLogin.classList.toggle('active', isLogin);
+    tabRegister.classList.toggle('active', !isLogin);
+    loginForm.hidden = !isLogin;
+    registerForm.hidden = isLogin;
+    if (!isLogin) loadCaptcha();
+  }
+  tabLogin.addEventListener('click', function () { showTab('login'); });
+  tabRegister.addEventListener('click', function () { showTab('register'); });
+
+  async function loadCaptcha() {
+    try {
+      var data = await api('/api/journey-captcha');
+      $('captchaImg').src = 'data:image/svg+xml;utf8,' + encodeURIComponent(data.svg);
+      captchaToken = data.token;
+      $('captchaInput').value = '';
+    } catch (e) {
+      $('regMsg').textContent = '验证码拿不到，请刷新页面再试';
+      $('regMsg').classList.add('err');
+    }
+  }
+  $('captchaImg').addEventListener('click', loadCaptcha);
+
+  loginForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var btn = $('loginBtn'), msg = $('loginMsg');
+    btn.disabled = true;
+    msg.textContent = '';
+    msg.classList.remove('err');
+    try {
+      var data = await postJson('/api/journey-auth', {
+        action: 'login',
+        username: $('loginUser').value.trim(),
+        password: $('loginPass').value,
+        remember: $('rememberMe').checked,
+      });
+      me = data.username;
+      enterApp();
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add('err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  registerForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var btn = $('regBtn'), msg = $('regMsg');
+    btn.disabled = true;
+    msg.textContent = '';
+    msg.classList.remove('err');
+    try {
+      var data = await postJson('/api/journey-auth', {
+        action: 'register',
+        username: $('regUser').value.trim(),
+        password: $('regPass').value,
+        captcha: $('captchaInput').value.trim(),
+        captchaToken: captchaToken,
+      });
+      me = data.username;
+      enterApp();
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add('err');
+      if (/验证码/.test(err.message)) loadCaptcha();
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('logoutBtn').addEventListener('click', async function () {
+    try { await postJson('/api/journey-auth', { action: 'logout' }); } catch (e) {}
+    location.reload();
+  });
+
+  /* ---------- 进入应用 ---------- */
+  function enterApp() {
+    authView.hidden = true;
+    appView.hidden = false;
+    $('topApp').hidden = false;
+    $('whoText').textContent = '你好，' + me;
+    $('whoText').hidden = false;
+    $('logoutBtn').hidden = false;
+    initMapApp();
+  }
+
+  async function initMapApp() {
+    try {
+      var results = await Promise.all([
+        fetch('data/city-coordinates.json').then(function (r) { return r.json(); }),
+        api('/api/journey-data?type=counts'),
+        api('/api/journey-data?type=mine'),
+      ]);
+      cities = results[0];
+      cityNames = Object.keys(cities);
+      counts = results[1].counts || {};
+      mine = new Set();
+      myDates = new Map();
+      (results[2].cities || []).forEach(function (v) {
+        mine.add(v.c);
+        myDates.set(v.c, v.d);
+      });
+      var t = results[1].totals || {};
+      $('statUsers').textContent = t.users || 0;
+      $('statCities').textContent = t.cities || 0;
+      $('statPhotos').textContent = t.photos || 0;
+      $('statMessages').textContent = t.messages || 0;
+      refreshMap();
+      renderMyChips();
+    } catch (e) {
+      var bar = document.querySelector('.bottombar');
+      var p = document.createElement('p');
+      p.className = 'msg err';
+      p.textContent = '数据没能加载出来，请刷新页面再试（' + e.message + '）';
+      bar.appendChild(p);
+    }
+  }
+
+  function bumpStat(id, delta) {
+    var el = $(id);
+    var n = parseInt(el.textContent.replace(/,/g, ''), 10);
+    if (!isNaN(n)) el.textContent = n + delta;
+  }
+
+  function renderMyChips() {
+    var box = $('myChips');
+    box.innerHTML = '';
+    var list = Array.from(mine).sort(function (a, b) {
+      var da = myDates.get(a) || '', db = myDates.get(b) || '';
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    $('myEmpty').hidden = list.length > 0;
+    list.forEach(function (name) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip-btn';
+      var n = document.createElement('b');
+      n.textContent = name;
+      var d = document.createElement('span');
+      d.textContent = fmtDate(myDates.get(name));
+      b.appendChild(n);
+      b.appendChild(d);
+      b.addEventListener('click', function () {
+        selectCity(name);
+        var ll = latLngOf(name);
+        if (ll) map.flyTo(ll, Math.max(map.getZoom(), 6));
+      });
+      box.appendChild(b);
+    });
+  }
+
+  /* ---------- 搜索城市 ---------- */
+  var searchInput = $('citySearch'), suggest = $('suggest');
+  searchInput.addEventListener('input', function () {
+    var q = searchInput.value.trim();
+    if (!q || !cities) { suggest.classList.remove('open'); suggest.innerHTML = ''; return; }
+    var hits = cityNames.filter(function (n) { return n.indexOf(q) !== -1; }).slice(0, 8);
+    if (!hits.length) { suggest.classList.remove('open'); suggest.innerHTML = ''; return; }
+    suggest.innerHTML = '';
+    hits.forEach(function (name) {
+      var c = cities[name];
+      var b = document.createElement('button');
+      b.type = 'button';
+      var left = document.createElement('span');
+      left.textContent = name;
+      var right = document.createElement('span');
+      right.textContent = c.province + ' · ' + c.prefecture;
+      b.appendChild(left);
+      b.appendChild(right);
+      b.addEventListener('click', function () {
+        searchInput.value = name;
+        suggest.classList.remove('open');
+        selectCity(name);
+        var ll = latLngOf(name);
+        if (ll) map.flyTo(ll, Math.max(map.getZoom(), 6));
+      });
+      suggest.appendChild(b);
+    });
+    suggest.classList.add('open');
+  });
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.search')) suggest.classList.remove('open');
+  });
+  searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var q = searchInput.value.trim();
+      if (q && cities && cities[q]) {
+        selectCity(q);
+        var ll = latLngOf(q);
+        if (ll) map.flyTo(ll, Math.max(map.getZoom(), 6));
+      }
+    }
+  });
+
+  /* ---------- 城市面板 ---------- */
+  /* 城市介绍：内置热门城市一句话介绍；没有的去中文维基百科取首段摘要 */
+  var CITY_INTROS = {
+    '丹寨': '丹寨是黔东南的苗族聚居县，万达小镇、卡拉鸟笼和苗族蜡染都在这里，山水田园风光秀美。',
+    '贵阳': '贵阳是贵州省会，避暑之都，甲秀楼、黔灵山、青岩古镇是必去的地方。',
+    '遵义': '遵义是贵州第二大城市，红色圣地，遵义会议会址和赤水丹霞都在这里。',
+    '凯里': '凯里是黔东南州府，苗侗风情的门户，西江千户苗寨、下司古镇都在附近。',
+    '安顺': '安顺以黄果树瀑布闻名，还有龙宫和屯堡文化，是贵州山水的精华。',
+    '铜仁': '铜仁地处武陵山区，梵净山是世界自然遗产，云海佛光美不胜收。',
+    '毕节': '毕节有百里杜鹃和织金洞，春天漫山杜鹃花开，是贵州的后花园。',
+    '六盘水': '六盘水是中国凉都，夏天平均气温 19℃，乌蒙大草原、玉舍雪山值得一去。',
+    '黔西南': '黔西南以万峰林、马岭河峡谷闻名，兴义是山地旅游的好去处。',
+    '黔南': '黔南有荔波小七孔和平塘天眼，是喀斯特山水和天文奇观的结合。',
+    '黔东南': '黔东南是苗侗文化的中心，千户苗寨、肇兴侗寨、镇远古城都在这里。',
+    '湘西': '湘西土家族苗族自治州在湖南西北部，凤凰古城、芙蓉镇、矮寨大桥是这里的名片。',
+    '凤凰': '凤凰古城是湘西的明珠，沱江边吊脚楼林立，沈从文笔下的边城。',
+    '张家界': '张家界以奇峰林立闻名，武陵源是世界自然遗产，阿凡达悬浮山的原型就在这里。',
+    '长沙': '长沙是湖南省会，岳麓山、橘子洲头、太平老街，夜宵和湘菜都很有名。',
+    '怀化': '怀化是湘西门户，洪江古商城、通道侗寨、黔阳古城值得慢慢逛。',
+    '成都': '成都是四川省会，大熊猫繁育基地、宽窄巷子、锦里，火锅和慢生活是这里的味道。',
+    '重庆': '重庆是山城、雾都，洪崖洞、解放碑、长江索道，火锅和夜景都是一绝。',
+    '昆明': '昆明是云南省会，四季如春，滇池、石林、西山龙门是经典去处。',
+    '大理': '大理在苍山洱海之间，古城、喜洲、三塔，是很多人心中的诗和远方。',
+    '丽江': '丽江古城是世界文化遗产，玉龙雪山、泸沽湖、束河古镇都很值得去。',
+    '西安': '西安是十三朝古都，兵马俑、大雁塔、古城墙，历史在这里随处可见。',
+    '北京': '北京是首都，故宫、天安门、长城、颐和园，胡同里藏着老北京的味道。',
+    '上海': '上海是国际大都市，外滩、东方明珠、豫园、武康路，摩登与烟火气并存。',
+    '广州': '广州是千年商都，珠江夜游、陈家祠、沙面，早茶和粤菜是这里的日常。',
+    '深圳': '深圳是改革开放的前沿，华侨城、大梅沙、东部华侨城，年轻又充满活力。',
+    '杭州': '杭州有西湖、灵隐寺、良渚古城，龙井茶香和江南韵味是这里的名片。',
+    '苏州': '苏州是园林之城，拙政园、平江路、周庄，小桥流水是江南的模样。',
+    '南京': '南京是六朝古都，中山陵、夫子庙、秦淮河，历史底蕴深厚。',
+    '武汉': '武汉是湖北省会，黄鹤楼、东湖、户部巷，热干面和樱花都很有名。',
+    '厦门': '厦门是海上花园，鼓浪屿、曾厝垵、环岛路，文艺又悠闲。',
+    '泉州': '泉州是宋元中国的世界海洋商贸中心，开元寺、清净寺、西街都值得看。',
+    '福州': '福州是福建省会，三坊七巷、鼓山、西湖，茉莉花茶香飘全城。',
+    '桂林': '桂林山水甲天下，漓江、阳朔、龙脊梯田，是中国山水的代表。',
+    '南宁': '南宁是广西首府，绿城，青秀山、南湖、扬美古镇，气候宜人。',
+    '柳州': '柳州以螺蛳粉闻名，还有柳侯公园、龙潭公园，工业与山水交融。',
+    '拉萨': '拉萨是西藏首府，布达拉宫、大昭寺、八廓街，是高原上的圣城。',
+    '西宁': '西宁是青海省会，塔尔寺、青海湖、茶卡盐湖的门户。',
+    '兰州': '兰州是甘肃省会，黄河穿城而过，中山桥、白塔山、牛肉面是这里的标志。',
+    '银川': '银川是宁夏首府，塞上江南，西夏王陵、沙湖、镇北堡西部影城值得一去。',
+    '呼和浩特': '呼和浩特是内蒙古首府，草原文化的门户，昭君墓、大召寺、希拉穆仁草原。',
+    '哈尔滨': '哈尔滨是冰城，中央大街、圣索菲亚教堂，冬天有冰雪大世界。',
+    '长春': '长春是吉林省会，伪满皇宫、净月潭，汽车城和电影城是这里的名片。',
+    '沈阳': '沈阳是辽宁省会，故宫、北陵、张氏帅府，清朝发祥地。',
+    '大连': '大连是北方明珠，星海广场、老虎滩、金石滩，海滨风光很美。',
+    '青岛': '青岛是红瓦绿树、碧海蓝天的海滨城市，崂山、栈桥、八大关都很出名。',
+    '济南': '济南是泉城，趵突泉、大明湖、千佛山，泉水是这座城市的灵魂。',
+    '郑州': '郑州是河南的交通枢纽，少林寺、黄河、河南博物院都在附近。',
+    '洛阳': '洛阳是十三朝古都，龙门石窟、白马寺、牡丹花会，历史与花香并存。',
+    '开封': '开封是北宋都城，清明上河园、铁塔、包公祠，汴梁风味很足。',
+    '合肥': '合肥是安徽省会，包公祠、逍遥津、三河古镇，科大是这里的名片。',
+    '黄山': '黄山以奇松、怪石、云海、温泉四绝闻名，五岳归来不看山，黄山归来不看岳。',
+    '南昌': '南昌是江西省会，滕王阁、八一起义纪念馆、赣江，红色与诗意并存。',
+    '景德镇': '景德镇是千年瓷都，御窑厂、陶溪川，陶瓷文化在这里代代相传。',
+    '海口': '海口是海南省会，骑楼老街、假日海滩，椰风海韵是这里的日常。',
+    '三亚': '三亚是海南的度假天堂，亚龙湾、蜈支洲岛、天涯海角，阳光沙滩一应俱全。',
+    '台北': '台北是台湾的中心，101 大楼、故宫博物院、士林夜市，烟火气十足。',
+    '高雄': '高雄是台湾南部的港都，爱河、旗津、驳二艺术特区，阳光热情。',
+    '香港': '香港是东方之珠，维多利亚港、太平山顶、迪士尼，繁华与烟火气并存。',
+    '澳门': '澳门是中西文化交融的城市，大三巴、威尼斯人、官也街，小而精致。',
+    '天津': '天津是北方重要港口，五大道、意式风情街、古文化街，相声和煎饼果子很有名。',
+    '石家庄': '石家庄是河北省会，正定古城、赵州桥、西柏坡，京津冀的门户。',
+    '太原': '太原是山西省会，晋祠、双塔寺、汾河公园，面食和醋文化是这里的特色。',
+    '大同': '大同是山西北部的历史名城，云冈石窟、悬空寺、华严寺，北魏风华犹在。',
+    '乌鲁木齐': '乌鲁木齐是新疆首府，天山天池、红山公园、大巴扎，丝路风情浓郁。',
+    '喀什': '喀什是丝绸之路的重镇，喀什古城、艾提尕尔清真寺，异域风情扑面而来。'
+  };
+  async function selectCity(name) {
+    if (!cities || !cities[name]) return;
+    selected = name;
+    var panel = $('cityPanel');
+    panel.hidden = false;
+    panel.classList.remove('collapsed');
+    $('cityPanelTab').hidden = true;
+    $('cityName').textContent = name;
+    $('sheetPeekName').textContent = name;
+    var c = cities[name];
+    $('citySub').textContent = c.province + ' · ' + c.prefecture;
+    // 介绍：先用内置的，没有就去中文维基百科取首段
+    var introEl = $('cityIntro');
+    var intro = CITY_INTROS[name];
+    if (intro) {
+      introEl.textContent = intro;
+      introEl.hidden = false;
+    } else {
+      introEl.hidden = true;
+      fetch('https://zh.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(name))
+        .then(function (r) { if (!r.ok) throw new Error('no page'); return r.json(); })
+        .then(function (d) {
+          if (d.extract && selected === name) {
+            var t = d.extract;
+            introEl.textContent = t.length > 120 ? t.slice(0, 120) + '…' : t;
+            introEl.hidden = false;
+          }
+        })
+        .catch(function () {});
+    }
+    $('cityCount').textContent = '…';
+    $('cityUsers').textContent = '';
+    $('photoGrid').innerHTML = '';
+    $('photoEmpty').hidden = true;
+    $('msgList').innerHTML = '';
+    $('msgEmpty').hidden = true;
+    $('msgText').value = '';
+    $('msgFormMsg').textContent = '';
+    $('visitDate').value = myDates.get(name) || todayStr();
+    $('myDateLine').hidden = true;
+    $('updateDateBtn').hidden = true;
+    try {
+      var data = await api('/api/journey-data?type=city&city=' + encodeURIComponent(name));
+      renderCityPanel(data);
+    } catch (err) {
+      $('cityUsers').textContent = '没能加载这个城市，请刷新页面再试';
+    }
+  }
+
+  function renderCityPanel(data) {
+    $('cityCount').textContent = data.count;
+    $('cityUsers').textContent = data.users.length
+      ? '去过的人：' + data.users.slice(0, 10).join('、') + (data.users.length > 10 ? ' 等 ' + data.users.length + ' 人' : '')
+      : '还没有人点亮这个城市。';
+    var toggle = $('toggleBtn');
+    toggle.textContent = data.litByMe ? '取消点亮' : '点亮这个城市';
+    toggle.classList.toggle('btn-primary', !data.litByMe);
+    toggle.classList.toggle('btn-ghost', data.litByMe);
+    if (data.litByMe && data.myDate) {
+      $('myDateLine').innerHTML = '我于 <b>' + esc(fmtDate(data.myDate)) + '</b> 到过这里';
+      $('myDateLine').hidden = false;
+      $('visitDate').value = data.myDate;
+      $('updateDateBtn').hidden = false;
+    }
+    var grid = $('photoGrid');
+    grid.innerHTML = '';
+    $('photoEmpty').hidden = data.photos.length > 0;
+    data.photos.forEach(function (p) {
+      var a = document.createElement('a');
+      a.href = p.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      var img = document.createElement('img');
+      img.src = p.url;
+      img.alt = p.u + ' 在 ' + data.city + ' 拍的照片';
+      img.loading = 'lazy';
+      img.onerror = function () {
+        if (img.dataset.retried) return;
+        img.dataset.retried = '1';
+        setTimeout(function () { img.src = p.url + '&r=1'; }, 1500);
+      };
+      a.appendChild(img);
+      grid.appendChild(a);
+      var by = document.createElement('p');
+      by.className = 'photo-by';
+      by.textContent = p.u + ' · ' + fmtTime(p.at);
+      grid.appendChild(by);
+    });
+    var list = $('msgList');
+    list.innerHTML = '';
+    $('msgEmpty').hidden = data.messages.length > 0;
+    data.messages.forEach(function (m) { addMessageEl(m, false); });
+  }
+
+  function addMessageEl(m, prepend) {
+    var div = document.createElement('div');
+    div.className = 'message';
+    var who = document.createElement('div');
+    who.className = 'who2';
+    who.textContent = m.u;
+    var when = document.createElement('span');
+    when.textContent = fmtTime(m.at);
+    who.appendChild(when);
+    var p = document.createElement('p');
+    p.textContent = m.t;
+    div.appendChild(who);
+    div.appendChild(p);
+    var list = $('msgList');
+    if (prepend && list.firstChild) list.insertBefore(div, list.firstChild);
+    else list.appendChild(div);
+  }
+
+  $('toggleBtn').addEventListener('click', async function () {
+    if (!selected) return;
+    var btn = $('toggleBtn');
+    btn.disabled = true;
+    try {
+      var data = await postJson('/api/journey-data', { action: 'toggle', city: selected, date: $('visitDate').value });
+      if (data.lit) {
+        mine.add(selected);
+        counts[selected] = data.count;
+        myDates.set(selected, data.date);
+        if (data.count === 1) bumpStat('statCities', 1);
+      } else {
+        mine.delete(selected);
+        myDates.delete(selected);
+        if (data.count > 0) counts[selected] = data.count;
+        else delete counts[selected];
+        if (data.count === 0) bumpStat('statCities', -1);
+      }
+      renderMyChips();
+      refreshMap();
+      selectCity(selected);
+    } catch (err) {
+      $('msgFormMsg').textContent = err.message;
+      $('msgFormMsg').classList.add('err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('updateDateBtn').addEventListener('click', async function () {
+    if (!selected) return;
+    var btn = $('updateDateBtn');
+    var msg = $('msgFormMsg');
+    btn.disabled = true;
+    msg.textContent = '';
+    msg.classList.remove('err');
+    try {
+      var data = await postJson('/api/journey-data', { action: 'date', city: selected, date: $('visitDate').value });
+      myDates.set(selected, data.date);
+      $('myDateLine').innerHTML = '我于 <b>' + esc(fmtDate(data.date)) + '</b> 到过这里';
+      renderMyChips();
+      drawRoute();
+      msg.textContent = '日期已更新';
+      msg.classList.add('ok');
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add('err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('sendMsgBtn').addEventListener('click', async function () {
+    if (!selected) return;
+    var text = $('msgText').value.trim();
+    var msg = $('msgFormMsg');
+    var btn = $('sendMsgBtn');
+    if (!text) { msg.textContent = '先写一句留言再发送'; msg.classList.add('err'); return; }
+    btn.disabled = true;
+    msg.textContent = '';
+    msg.classList.remove('err');
+    try {
+      var data = await postJson('/api/journey-data', { action: 'message', city: selected, text: text });
+      $('msgText').value = '';
+      $('msgEmpty').hidden = true;
+      addMessageEl(data.message, true);
+      bumpStat('statMessages', 1);
+      msg.textContent = '留言已发送';
+      msg.classList.add('ok');
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add('err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  /* ---------- 传照片：浏览器里先压到 1000px 以内再上传 ---------- */
+  $('photoInput').addEventListener('change', async function () {
+    var file = this.files && this.files[0];
+    var note = $('photoMsg');
+    if (!file || !selected) return;
+    if (!/^image\/(jpeg|png)$/.test(file.type)) { note.textContent = '只要 JPG 或 PNG 图片'; return; }
+    note.textContent = '正在上传…';
+    try {
+      var dataUrl = await resizeImage(file, 1000);
+      var data = await postJson('/api/journey-data', { action: 'photo', city: selected, data: dataUrl });
+      note.textContent = '上传成功';
+      bumpStat('statPhotos', 1);
+      selectCity(selected);
+    } catch (err) {
+      note.textContent = err.message;
+    } finally {
+      this.value = '';
+    }
+  });
+
+  function resizeImage(file, maxSide) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, maxSide / Math.max(w, h));
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(w * scale));
+        canvas.height = Math.max(1, Math.round(h * scale));
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('这张图片读不出来，换一张试试')); };
+      img.src = url;
+    });
+  }
+
+  /* ---------- 3D 地球开场（globe.gl） ---------- */
+  var world = null;
+  var globeReady = false;
+  var globeReturnMode = false;
+  var globeOpenPending = false;
+  var globeTries = 0;
+
+  function initGlobe() {
+    if (world || typeof Globe === 'undefined') return false;
+    try {
+      var probe = document.createElement('canvas');
+      if (!probe.getContext('webgl') && !probe.getContext('experimental-webgl')) return false;
+    } catch (e) { return false; }
+    try {
+      world = new Globe(document.getElementById('globeViz'), { animateIn: false })
+        .globeImageUrl('assets/earth-blue-marble.jpg')
+        .bumpImageUrl('assets/earth-topology.png')
+        .backgroundColor('rgba(0,0,0,0)')
+        .showAtmosphere(true)
+        .atmosphereColor('#7FB2FF')
+        .atmosphereAltitude(0.25)
+        .pointsData([])
+        .pointAltitude(0.005)
+        .arcsData([])
+        .arcAltitude(0.02);
+      world.controls().autoRotate = true;
+      world.controls().autoRotateSpeed = 0.2;
+      world.pointOfView({ lat: 20, lng: 105, altitude: 1.5 }, 0);
+      // 相机一动就按可见半球重算标记，避免背面的金色从轮廓外探出来
+      world.controls().addEventListener('change', refreshGlobeVisibility);
+      world.onPointClick(function (d) {
+        if (!d || !d.name) return;
+        enterMapFromGlobe(false);
+        selectCity(d.name);
+      });
+      // 点标记的命中区在地球尺度下很小；点到球面上离已点亮城市足够近的位置也打开它
+      world.onGlobeClick(function (coords) {
+        if (!coords || !cities) return;
+        var best = null, bestDist = 1e9;
+        Object.keys(counts).forEach(function (name) {
+          var c = cities[name];
+          if (!c) return;
+          var d = angleBetween(coords.lat, coords.lng, c.coord[1], c.coord[0]);
+          if (d < bestDist) { bestDist = d; best = name; }
+        });
+        if (best && bestDist < 5) {
+          enterMapFromGlobe(false);
+          selectCity(best);
+        }
+      });
+      // 用户一上手拖动就停掉自动旋转，免得标记在指针下跑掉
+      document.getElementById('globeViz').addEventListener('pointerdown', function () {
+        if (world) world.controls().autoRotate = false;
+      });
+      var loading = $('globeLoading');
+      if (loading) loading.hidden = true;
+      globeReady = true;
+      updateGlobeData();
+      if (globeOpenPending) { globeOpenPending = false; showGlobeAgain(); }
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function tryInitGlobe() {
+    if (initGlobe()) return;
+    globeTries++;
+    if (globeTries < 30) setTimeout(tryInitGlobe, 200);
+    else skipGlobe();
+  }
+
+  function angleBetween(lat1, lng1, lat2, lng2) {
+    var p = Math.PI / 180;
+    var a = Math.sin(lat1 * p) * Math.sin(lat2 * p) + Math.cos(lat1 * p) * Math.cos(lat2 * p) * Math.cos((lng2 - lng1) * p);
+    return Math.acos(Math.min(1, Math.max(-1, a))) / p;
+  }
+
+  var globeVisibleKey = '';
+  function latLngToVec(lat, lng) {
+    var p = Math.PI / 180;
+    var phi = (90 - lat) * p, theta = (90 - lng) * p;
+    return { x: Math.sin(phi) * Math.cos(theta), y: Math.cos(phi), z: Math.sin(phi) * Math.sin(theta) };
+  }
+  // 朝向相机的半球上的城市（点积 > 0.3，离边缘留约 17° 余量，防标记边缘泄出圆盘外）
+  function visibleCityNames() {
+    if (!world || !cities) return null;
+    var cam = world.camera().position;
+    var len = Math.sqrt(cam.x * cam.x + cam.y * cam.y + cam.z * cam.z) || 1;
+    var cx = cam.x / len, cy = cam.y / len, cz = cam.z / len;
+    var vis = {};
+    Object.keys(counts).forEach(function (name) {
+      var c = cities[name];
+      if (!c) return;
+      var v = latLngToVec(c.coord[1], c.coord[0]);
+      if (v.x * cx + v.y * cy + v.z * cz > 0.3) vis[name] = true;
+    });
+    return vis;
+  }
+  // 相机动了才重算；可见集合没变就跳过，免得每帧重建
+  function refreshGlobeVisibility() {
+    if (!world || !cities) return;
+    var vis = visibleCityNames();
+    var key = vis ? Object.keys(vis).sort().join('|') : '';
+    if (key === globeVisibleKey) return;
+    globeVisibleKey = key;
+    updateGlobeData(vis);
+  }
+
+  function updateGlobeData(vis) {
+    if (!world || !cities) return;
+    if (vis === undefined) {
+      vis = visibleCityNames();
+      globeVisibleKey = vis ? Object.keys(vis).sort().join('|') : '';
+    }
+    var points = [];
+    Object.keys(counts).forEach(function (name) {
+      if (vis && !vis[name]) return;
+      var c = cities[name];
+      if (!c) return;
+      points.push({ lat: c.coord[1], lng: c.coord[0], size: mine.has(name) ? 0.4 : 0.25, color: mine.has(name) ? '#E8B93C' : '#7EF0E0', name: name });
+    });
+    var ordered = Array.from(mine).sort(function (a, b) {
+      var da = myDates.get(a) || '', db = myDates.get(b) || '';
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    var arcs = [];
+    for (var i = 0; i + 1 < ordered.length; i++) {
+      if (vis && (!vis[ordered[i]] || !vis[ordered[i + 1]])) continue;
+      var a = cities[ordered[i]], b = cities[ordered[i + 1]];
+      if (!a || !b) continue;
+      arcs.push({ startLat: a.coord[1], startLng: a.coord[0], endLat: b.coord[1], endLng: b.coord[0], color: ['#E8B93C', '#E8B93C'] });
+    }
+    world.pointsData(points).arcsData(arcs)
+      .arcDashLength(0.4).arcDashGap(0.2).arcDashAnimateTime(3000);
+    var wrap = document.getElementById('globeWrap');
+    if (wrap) wrap.dataset.marks = vis ? Object.keys(vis).sort().join(',') : '';
+  }
+
+  // 兜底定时器：即使 controls 的 change 事件没触发，转动时也能按可见半球刷新标记
+  var globeVisTimer = null;
+  function startGlobeVisTimer() {
+    stopGlobeVisTimer();
+    globeVisTimer = setInterval(refreshGlobeVisibility, 200);
+  }
+  function stopGlobeVisTimer() {
+    if (globeVisTimer) { clearInterval(globeVisTimer); globeVisTimer = null; }
+  }
+
+  function showGlobeIntro() {
+    var wrap = $('globeWrap');
+    wrap.hidden = false;
+    wrap.classList.remove('globe-off');
+    globeReturnMode = false;
+    $('globeExploreBtn').textContent = '开始探索';
+    $('globeLoginBtn').hidden = !!me;
+    startGlobeVisTimer();
+  }
+
+  function showGlobeAgain() {
+    if (!world) { globeOpenPending = true; tryInitGlobe(); return; }
+    var wrap = $('globeWrap');
+    wrap.hidden = false;
+    void wrap.offsetWidth;
+    wrap.classList.remove('globe-off');
+    globeReturnMode = true;
+    world.resumeAnimation();
+    world.controls().autoRotate = true;
+    world.controls().autoRotateSpeed = 0.2;
+    world.pointOfView({ lat: 28, lng: 105, altitude: 1.6 }, 0);
+    $('globeExploreBtn').textContent = '回到卫星地图';
+    $('globeLoginBtn').hidden = true;
+    startGlobeVisTimer();
+  }
+
+  function hideGlobe() {
+    var wrap = $('globeWrap');
+    wrap.classList.add('globe-off');
+    if (world) world.pauseAnimation();
+    stopGlobeVisTimer();
+    setTimeout(function () { wrap.hidden = true; }, 850);
+    try { sessionStorage.setItem('journey-globe-seen', '1'); } catch (e) {}
+  }
+
+  function skipGlobe() {
+    var wrap = $('globeWrap');
+    wrap.classList.add('globe-off');
+    wrap.hidden = true;
+    globeOpenPending = false;
+    stopGlobeVisTimer();
+    try { sessionStorage.setItem('journey-globe-seen', '1'); } catch (e) {}
+    if (!me) { authView.hidden = false; showTab('login'); }
+  }
+
+  function enterMapFromGlobe(fly) {
+    if (world && fly) {
+      world.controls().autoRotate = false;
+      world.pointOfView({ lat: 30, lng: 104, altitude: 0.9 }, 2200);
+      setTimeout(finishEnter, 1900);
+    } else {
+      setTimeout(finishEnter, 150);
+    }
+    function finishEnter() {
+      hideGlobe();
+      if (!me) { authView.hidden = false; showTab('login'); }
+      else { var s = $('citySearch'); if (s) s.focus(); }
+    }
+  }
+
+  $('globeExploreBtn').addEventListener('click', function () { enterMapFromGlobe(!globeReturnMode); });
+  $('globeLoginBtn').addEventListener('click', function () {
+    hideGlobe();
+    authView.hidden = false;
+    showTab('login');
+  });
+  $('globeToggleBtn').addEventListener('click', showGlobeAgain);
+
+  /* ---------- 启动：先看登录状态 ---------- */
+  (async function () {
+    tryInitGlobe();
+    try {
+      var data = await api('/api/journey-auth?action=me');
+      if (data.loggedIn) {
+        me = data.username;
+        enterApp();
+      }
+    } catch (e) {}
+    var seen = false;
+    try { seen = sessionStorage.getItem('journey-globe-seen') === '1'; } catch (e) {}
+    if (!seen) {
+      showGlobeIntro();
+    } else if (!me) {
+      authView.hidden = false;
+      showTab('login');
+    }
+  })();
+})();
+</script>
+
+<!-- 音乐播放器：和首页同一个，跨页续播（曲目、进度、播放状态存在 localStorage） -->
+<script>
+(function () {
+  var audio = document.getElementById('bgmAudio');
+  var fab = document.getElementById('musicFab');
+  var panel = document.getElementById('musicPanel');
+  var playBtn = document.getElementById('musicPlay');
+  var titleEl = document.getElementById('musicTitle');
+  var artistEl = document.getElementById('musicArtist');
+  var fill = document.getElementById('musicFill');
+  var progress = document.getElementById('musicProgress');
+  var timeEl = document.getElementById('musicTime');
+  var msg = document.getElementById('musicMsg');
+  var resultsEl = document.getElementById('musicResults');
+  var searchInput = document.getElementById('musicSearch');
+  var vol = document.getElementById('musicVol');
+  var tracks = [{ title: '蛋仔派对卡农', artist: '蛋蛋黑', src: 'assets/home-bgm.m4a', loop: true, preview: false }];
+  var current = 0;
+  /* 跨页续播：把曲目、进度、播放状态存到 localStorage，首页的播放器读到后从同一位置继续 */
+  var STATE_KEY = 'danzi-music-state';
+  function saveState() {
+    try {
+      if (!audio.src || audio.src.indexOf('blob:') === 0) return;
+      localStorage.setItem(STATE_KEY, JSON.stringify({ src: audio.src, title: titleEl.textContent, artist: artistEl.textContent, loop: audio.loop, preview: tracks[current] ? !!tracks[current].preview : false, time: audio.currentTime, playing: !audio.paused }));
+    } catch (e) {}
+  }
+  function restoreState() {
+    try {
+      var s = JSON.parse(localStorage.getItem(STATE_KEY) || 'null');
+      if (!s || !s.src || s.src.indexOf('blob:') === 0) return false;
+      var idx = -1;
+      for (var k = 0; k < tracks.length; k++) { if (s.src.indexOf(tracks[k].src) !== -1) { idx = k; break; } }
+      if (idx === -1) { tracks.push({ title: s.title, artist: s.artist, src: s.src, loop: !!s.loop, preview: !!s.preview }); idx = tracks.length - 1; }
+      load(idx);
+      audio.addEventListener('loadedmetadata', function seekOnce() {
+        audio.removeEventListener('loadedmetadata', seekOnce);
+        if (s.time > 0 && isFinite(audio.duration) && s.time < audio.duration) { try { audio.currentTime = s.time; } catch (e) {} }
+        if (s.playing) {
+          audio.play().then(function () { setPlaying(true); msg.textContent = '正在从上个页面继续播放。'; }).catch(function () {
+            msg.textContent = '点 ▶ 从上次的位置继续播放。'; setPlaying(false);
+          });
+        } else {
+          msg.textContent = '点 ▶ 从上次的位置继续播放。';
+        }
+      });
+      return true;
+    } catch (e) { return false; }
+  }
+  function fmt(s) { if (!isFinite(s)) return '0:00'; s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function load(i) {
+    current = (i + tracks.length) % tracks.length;
+    var t = tracks[current];
+    audio.src = t.src;
+    audio.loop = !!t.loop;
+    titleEl.textContent = t.title;
+    artistEl.textContent = t.artist;
+    fill.style.width = '0%';
+    timeEl.textContent = '0:00 / ' + (t.preview ? '0:30' : '—');
+  }
+  function setPlaying(p) {
+    playBtn.textContent = p ? '⏸' : '▶';
+    fab.classList.toggle('playing', p);
+  }
+  function playCurrent() {
+    audio.play().then(function () { setPlaying(true); }).catch(function () {
+      msg.textContent = '浏览器不让自动播放，点一下 ▶ 再试。';
+    });
+  }
+  playBtn.addEventListener('click', function () {
+    if (audio.paused) {
+      if (!audio.src) load(0);
+      if (audio.error) { audio.load(); }
+      playCurrent();
+    }
+    else { audio.pause(); setPlaying(false); }
+  });
+  audio.addEventListener('error', function () {
+    msg.textContent = '音频加载失败，可能是网络问题，点 ▶ 重试。';
+    setPlaying(false);
+  });
+  document.getElementById('musicPrev').addEventListener('click', function () { load(current - 1); playCurrent(); });
+  document.getElementById('musicNext').addEventListener('click', function () { load(current + 1); playCurrent(); });
+  audio.addEventListener('ended', function () { if (!audio.loop) { load(current + 1); playCurrent(); } });
+  var saveTick = 0;
+  audio.addEventListener('timeupdate', function () {
+    if (audio.duration) fill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+    timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
+    if (!audio.paused && ++saveTick % 20 === 0) saveState();
+  });
+  audio.addEventListener('pause', saveState);
+  window.addEventListener('pagehide', saveState);
+  audio.addEventListener('loadedmetadata', function () { timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration); });
+  progress.addEventListener('click', function (e) {
+    var r = progress.getBoundingClientRect();
+    if (audio.duration) audio.currentTime = (e.clientX - r.left) / r.width * audio.duration;
+  });
+  try { var v = localStorage.getItem('danzi-music-vol'); if (v !== null) vol.value = v; } catch (e) {}
+  audio.volume = parseFloat(vol.value) || 0.8;
+  vol.addEventListener('input', function () {
+    audio.volume = parseFloat(vol.value);
+    try { localStorage.setItem('danzi-music-vol', vol.value); } catch (e) {}
+  });
+  function setOpen(open) {
+    panel.hidden = !open;
+    try { localStorage.setItem('danzi-music-open', open ? '1' : '0'); } catch (e) {}
+  }
+  fab.addEventListener('click', function () { setOpen(panel.hidden); });
+  document.getElementById('musicClose').addEventListener('click', function () { setOpen(false); });
+  try { if (localStorage.getItem('danzi-music-open') === '1') setOpen(true); } catch (e) {}
+  function doSearch() {
+    var q = searchInput.value.trim();
+    if (!q) { msg.textContent = '先输入歌名或歌手。'; return; }
+    msg.textContent = '正在搜…';
+    resultsEl.innerHTML = '';
+    fetch('https://itunes.apple.com/search?term=' + encodeURIComponent(q) + '&media=music&entity=song&limit=8')
+      .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function (d) {
+        var list = (d.results || []).filter(function (x) { return x.previewUrl; });
+        if (!list.length) { msg.textContent = '没搜到，换个关键词试试。'; return; }
+        msg.textContent = '点一首就能听 30 秒试听。';
+        list.forEach(function (x) {
+          var li = document.createElement('li');
+          var name = document.createElement('span'); name.className = 'rt'; name.textContent = x.trackName + ' — ' + x.artistName;
+          var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = '试听';
+          li.appendChild(name); li.appendChild(tag);
+          li.addEventListener('click', function () {
+            var t = { title: x.trackName, artist: x.artistName, src: x.previewUrl, loop: false, preview: true };
+            var idx = -1;
+            for (var k = 0; k < tracks.length; k++) { if (tracks[k].src === t.src) { idx = k; break; } }
+            if (idx === -1) { tracks.push(t); idx = tracks.length - 1; }
+            load(idx); playCurrent();
+          });
+          resultsEl.appendChild(li);
+        });
+      })
+      .catch(function () { msg.textContent = '搜不到，可能是网络问题，换个关键词再试。'; });
+  }
+  document.getElementById('musicSearchBtn').addEventListener('click', doSearch);
+  searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  document.getElementById('musicFile').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var url = URL.createObjectURL(f);
+    var t = { title: f.name.replace(/\.[^.]+$/, ''), artist: '本地文件', src: url, loop: false, preview: false };
+    tracks.push(t);
+    load(tracks.length - 1); playCurrent();
+    msg.textContent = '正在播放本地音乐：' + f.name;
+  });
+  if (!restoreState()) load(0);
+})();
+</script>
+</body>
+</html>

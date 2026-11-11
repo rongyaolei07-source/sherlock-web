@@ -1,0 +1,1 @@
+{"description":"Sherlock username search as a plain Vercel project: static frontend + Node serverless API.","engines":{"node":">=20"},"name":"sherlock-vercel","private":true,"type":"module","version":"1.0.0","dependencies":{"@vercel/blob":"^2.9.0"}}

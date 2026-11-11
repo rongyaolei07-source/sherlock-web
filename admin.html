@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网站后台 · 蛋仔导航网</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh; background: #000; color: #F5F5F5;
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { margin: 0 0 6px; font-size: 28px; line-height: 36px; font-weight: 700; }
+  h1 .gold { color: #E8B93C; }
+  .sub { margin: 0 0 28px; font-size: 14px; line-height: 20px; color: #A3A3A3; }
+  .sub a { color: #E8B93C; text-decoration: none; }
+  .card {
+    background: #1F1F1F; border: 1px solid #313131; border-radius: 16px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  input[type="password"] {
+    width: 100%; padding: 12px 14px; font: inherit; font-size: 15px; color: #F5F5F5;
+    background: #272727; border: 1px solid #313131; border-radius: 8px; outline: none;
+  }
+  input[type="password"]:focus { border-color: #E8B93C; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: none; cursor: pointer; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 600;
+    padding: 12px 24px; text-decoration: none; transition: opacity 200ms;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn-primary { background: #E8B93C; color: #111; margin-top: 14px; }
+  .btn-ghost { background: transparent; color: #F5F5F5; border: 1px solid #313131; padding: 8px 16px; font-size: 14px; }
+  .btn-danger { background: transparent; color: #F87171; border: 1px solid rgba(248,113,113,0.4); padding: 6px 12px; font-size: 13px; border-radius: 999px; cursor: pointer; font: inherit; }
+  .btn-danger:hover { background: rgba(248,113,113,0.12); }
+  .btn-view { background: transparent; color: #E8B93C; border: 1px solid rgba(232,185,60,0.4); padding: 6px 12px; font-size: 13px; border-radius: 999px; cursor: pointer; font: inherit; }
+  .msg { margin-top: 12px; font-size: 13px; color: #F87171; min-height: 18px; }
+  .hidden { display: none; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .topbar .actions { display: flex; gap: 10px; }
+  .overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat { background: #1F1F1F; border: 1px solid #313131; border-radius: 16px; padding: 16px; text-align: center; }
+  .stat .num { font-size: 28px; line-height: 36px; font-weight: 700; color: #E8B93C; }
+  .stat .lbl { font-size: 13px; color: #A3A3A3; margin-top: 4px; }
+  h2 { font-size: 18px; line-height: 26px; margin: 0 0 4px; }
+  .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 28px 0 12px; }
+  .sec-head .count { font-size: 13px; color: #A3A3A3; }
+  .item {
+    background: #1F1F1F; border: 1px solid #313131; border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .item p { margin: 0 0 8px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .item .meta { font-size: 12px; color: #A3A3A3; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .item .meta .spacer { flex: 1; }
+  .empty { color: #A3A3A3; font-size: 14px; text-align: center; padding: 24px 0; }
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal[hidden] { display: none; }
+  .modal img { max-width: min(92vw, 720px); max-height: 82vh; border-radius: 12px; }
+  .modal .close {
+    position: fixed; top: 16px; right: 20px; background: #1F1F1F; color: #F5F5F5;
+    border: 1px solid #313131; border-radius: 50%; width: 44px; height: 44px;
+    font-size: 22px; cursor: pointer;
+  }
+  @media (max-width: 640px) {
+    .overview { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>网站<span class="gold">后台</span></h1>
+  <p class="sub">只有知道管理员密码的人能进 · <a href="/">回首页</a></p>
+
+  <div class="card" id="loginCard">
+    <form id="loginForm">
+      <label for="pw">管理员密码</label>
+      <input type="password" id="pw" autocomplete="current-password" placeholder="输入密码（和愿望后台同一个）">
+      <button class="btn btn-primary" type="submit">进入后台</button>
+      <p class="msg" id="loginMsg" role="status"></p>
+    </form>
+  </div>
+
+  <div id="adminView" class="hidden">
+    <div class="topbar">
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" id="refreshBtn">刷新</button>
+        <button class="btn btn-ghost" type="button" id="logoutBtn">退出登录</button>
+      </div>
+    </div>
+
+    <div class="overview" id="overview"></div>
+
+    <div class="sec-head"><h2>愿望</h2><span class="count" id="wishesCount"></span></div>
+    <div id="wishesList"></div>
+
+    <div class="sec-head"><h2>旅途用户</h2><span class="count" id="usersCount"></span></div>
+    <div id="usersList"></div>
+
+    <div class="sec-head"><h2>足迹（点亮的城市）</h2><span class="count" id="footprintsCount"></span></div>
+    <div id="footprintsList"></div>
+
+    <div class="sec-head"><h2>旅途留言</h2><span class="count" id="messagesCount"></span></div>
+    <div id="messagesList"></div>
+
+    <div class="sec-head"><h2>旅途照片</h2><span class="count" id="photosCount"></span></div>
+    <div id="photosList"></div>
+  </div>
+</div>
+
+<div class="modal" id="photoModal" hidden>
+  <button class="close" type="button" id="photoClose" aria-label="关闭">×</button>
+  <img id="photoImg" alt="旅途照片">
+</div>
+
+<script>
+(function () {
+  var loginForm = document.getElementById('loginForm');
+  var loginCard = document.getElementById('loginCard');
+  var loginMsg = document.getElementById('loginMsg');
+  var adminView = document.getElementById('adminView');
+  var password = '';
+  try { password = sessionStorage.getItem('danzi-admin-pw') || ''; } catch (e) {}
+
+  function fmtTime(t) {
+    if (!t) return '';
+    return new Date(t).toLocaleString('zh-CN', { hour12: false });
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+  function apiHeaders() { return { 'X-Admin-Password': password }; }
+
+  async function loadAll() {
+    var res = await fetch('/api/admin', { headers: apiHeaders() });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || ('加载失败（' + res.status + '）'));
+    return data;
+  }
+
+  async function doAction(action, body) {
+    var res = await fetch('/api/admin', {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, apiHeaders()),
+      body: JSON.stringify(Object.assign({ action: action }, body)),
+    });
+    var data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || ('操作失败（' + res.status + '）'));
+  }
+
+  function render(data) {
+    // 概览
+    var ov = document.getElementById('overview');
+    ov.innerHTML = '';
+    var stats = [
+      ['真实访客', data.visits],
+      ['愿望', data.wishes.length],
+      ['注册用户', data.journey.users.length],
+      ['点亮城市', data.journey.visits.length],
+      ['留言', data.journey.messages.length],
+      ['照片', data.journey.photos.length],
+    ];
+    stats.forEach(function (s) {
+      var d = el('div', 'stat');
+      d.append(el('div', 'num', String(s[1])), el('div', 'lbl', s[0]));
+      ov.appendChild(d);
+    });
+
+    // 愿望
+    document.getElementById('wishesCount').textContent = '共 ' + data.wishes.length + ' 条 · 最新在前';
+    var wl = document.getElementById('wishesList');
+    wl.innerHTML = '';
+    if (!data.wishes.length) wl.appendChild(el('p', 'empty', '还没有人许愿。'));
+    data.wishes.forEach(function (w) {
+      var div = el('div', 'item');
+      div.appendChild(el('p', null, w.text));
+      var meta = el('div', 'meta');
+      meta.appendChild(el('span', null, fmtTime(w.createdAt)));
+      meta.appendChild(el('span', 'spacer'));
+      var del = el('button', 'btn-danger', '删除');
+      del.type = 'button';
+      del.addEventListener('click', function () {
+        if (!confirm('确定删除这条愿望吗？删了就找不回来了。')) return;
+        doAction('deleteWish', { id: w.id }).then(refresh).catch(function (e) { alert(e.message); });
+      });
+      meta.appendChild(del);
+      div.appendChild(meta);
+      wl.appendChild(div);
+    });
+
+    // 旅途用户
+    document.getElementById('usersCount').textContent = '共 ' + data.journey.users.length + ' 人';
+    var ul = document.getElementById('usersList');
+    ul.innerHTML = '';
+    if (!data.journey.users.length) ul.appendChild(el('p', 'empty', '还没有人注册。'));
+    data.journey.users.forEach(function (u) {
+      var div = el('div', 'item');
+      var meta = el('div', 'meta');
+      meta.appendChild(el('span', null, u.u));
+      meta.appendChild(el('span', null, '注册于 ' + fmtTime(u.at)));
+      meta.appendChild(el('span', null, '点亮 ' + u.lit + ' 个城市'));
+      meta.appendChild(el('span', 'spacer'));
+      var del = el('button', 'btn-danger', '删除用户');
+      del.type = 'button';
+      del.addEventListener('click', function () {
+        if (!confirm('确定删除用户「' + u.u + '」吗？他的足迹、留言和照片会一起删掉，删了找不回来。')) return;
+        doAction('deleteUser', { username: u.u }).then(refresh).catch(function (e) { alert(e.message); });
+      });
+      meta.appendChild(del);
+      div.appendChild(meta);
+      ul.appendChild(div);
+    });
+
+    // 足迹
+    document.getElementById('footprintsCount').textContent = '共 ' + data.journey.visits.length + ' 条 · 最新在前';
+    var fl = document.getElementById('footprintsList');
+    fl.innerHTML = '';
+    if (!data.journey.visits.length) fl.appendChild(el('p', 'empty', '还没有人点亮城市。'));
+    data.journey.visits.forEach(function (v) {
+      var div = el('div', 'item');
+      var meta = el('div', 'meta');
+      meta.appendChild(el('span', null, v.u));
+      meta.appendChild(el('span', null, v.c));
+      meta.appendChild(el('span', null, '游玩日期 ' + v.d));
+      div.appendChild(meta);
+      fl.appendChild(div);
+    });
+
+    // 留言
+    document.getElementById('messagesCount').textContent = '共 ' + data.journey.messages.length + ' 条 · 最新在前';
+    var ml = document.getElementById('messagesList');
+    ml.innerHTML = '';
+    if (!data.journey.messages.length) ml.appendChild(el('p', 'empty', '还没有留言。'));
+    data.journey.messages.forEach(function (m) {
+      var div = el('div', 'item');
+      div.appendChild(el('p', null, m.t));
+      var meta = el('div', 'meta');
+      meta.appendChild(el('span', null, m.u + ' · ' + m.c));
+      meta.appendChild(el('span', null, fmtTime(m.at)));
+      meta.appendChild(el('span', 'spacer'));
+      var del = el('button', 'btn-danger', '删除');
+      del.type = 'button';
+      del.addEventListener('click', function () {
+        if (!confirm('确定删除这条留言吗？')) return;
+        doAction('deleteMessage', { id: m.id }).then(refresh).catch(function (e) { alert(e.message); });
+      });
+      meta.appendChild(del);
+      div.appendChild(meta);
+      ml.appendChild(div);
+    });
+
+    // 照片
+    document.getElementById('photosCount').textContent = '共 ' + data.journey.photos.length + ' 张 · 最新在前';
+    var pl = document.getElementById('photosList');
+    pl.innerHTML = '';
+    if (!data.journey.photos.length) pl.appendChild(el('p', 'empty', '还没有照片。'));
+    data.journey.photos.forEach(function (p) {
+      var div = el('div', 'item');
+      var meta = el('div', 'meta');
+      meta.appendChild(el('span', null, p.u + ' · ' + p.c));
+      meta.appendChild(el('span', null, fmtTime(p.at)));
+      meta.appendChild(el('span', 'spacer'));
+      var view = el('button', 'btn-view', '查看');
+      view.type = 'button';
+      view.addEventListener('click', function () { viewPhoto(p.id); });
+      var del = el('button', 'btn-danger', '删除');
+      del.type = 'button';
+      del.addEventListener('click', function () {
+        if (!confirm('确定删除这张照片吗？删了就找不回来了。')) return;
+        doAction('deletePhoto', { id: p.id }).then(refresh).catch(function (e) { alert(e.message); });
+      });
+      meta.appendChild(view);
+      meta.appendChild(del);
+      div.appendChild(meta);
+      pl.appendChild(div);
+    });
+  }
+
+  async function refresh() {
+    var data = await loadAll();
+    render(data);
+  }
+
+  async function viewPhoto(id) {
+    var modal = document.getElementById('photoModal');
+    var img = document.getElementById('photoImg');
+    img.removeAttribute('src');
+    modal.hidden = false;
+    try {
+      var res = await fetch('/api/admin?photo=' + encodeURIComponent(id), { headers: apiHeaders() });
+      if (!res.ok) throw new Error('照片打不开（' + res.status + '）');
+      var blob = await res.blob();
+      img.src = URL.createObjectURL(blob);
+    } catch (e) {
+      modal.hidden = true;
+      alert(e.message || '照片打不开');
+    }
+  }
+
+  document.getElementById('photoClose').addEventListener('click', function () {
+    document.getElementById('photoModal').hidden = true;
+    document.getElementById('photoImg').removeAttribute('src');
+  });
+  document.getElementById('photoModal').addEventListener('click', function (e) {
+    if (e.target === this) {
+      this.hidden = true;
+      document.getElementById('photoImg').removeAttribute('src');
+    }
+  });
+
+  loginForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    password = document.getElementById('pw').value;
+    loginMsg.textContent = '';
+    try {
+      await refresh();
+      try { sessionStorage.setItem('danzi-admin-pw', password); } catch (err) {}
+      loginCard.classList.add('hidden');
+      adminView.classList.remove('hidden');
+    } catch (err) {
+      loginMsg.textContent = err.message || '加载失败';
+    }
+  });
+
+  document.getElementById('refreshBtn').addEventListener('click', function () {
+    refresh().catch(function (e) { alert(e.message || '刷新失败'); });
+  });
+  document.getElementById('logoutBtn').addEventListener('click', function () {
+    password = '';
+    try { sessionStorage.removeItem('danzi-admin-pw'); } catch (e) {}
+    adminView.classList.add('hidden');
+    loginCard.classList.remove('hidden');
+    document.getElementById('pw').value = '';
+  });
+
+  // 同一浏览器标签页内已登录过就直接进后台
+  if (password) {
+    refresh().then(function () {
+      loginCard.classList.add('hidden');
+      adminView.classList.remove('hidden');
+    }).catch(function () { password = ''; });
+  }
+})();
+</script>
+</body>
+</html>

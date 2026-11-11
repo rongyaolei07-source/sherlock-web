@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>找不到页面 · 蛋仔导航网</title>
+<meta name="description" content="你要找的页面不存在，或者已经被蛋仔藏起来了。">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="assets/danzi-cup-noodle.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #000000; --bg-2: #1F1F1F; --line: #313131;
+    --text: #FFFFFF; --text-2: #9B9B9B;
+    --accent: #E8B93C; --accent-text: #181818;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: var(--text); background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 24px;
+  }
+  .icon { width: 64px; height: 64px; color: var(--accent); margin: 0 auto 32px; }
+  h1 { font-size: 48px; line-height: 48px; font-weight: 600; margin: 0 0 16px; text-wrap: balance; }
+  p { font-size: 16px; line-height: 24px; color: var(--text-2); margin: 0 0 32px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 8px 12px; border-radius: 12px; border: 1px solid transparent;
+    font: inherit; font-size: 16px; line-height: 24px; font-weight: 600;
+    text-decoration: none; cursor: pointer; background: var(--accent); color: var(--accent-text);
+    transition: background-color 300ms var(--ease), transform 300ms var(--ease);
+  }
+  .btn:hover { background: #F0C44E; }
+  .btn:active { transform: scale(0.98); }
+  .btn .icon { width: 20px; height: 20px; color: var(--accent-text); margin: 0; }
+  @media (max-width: 390px) {
+    h1 { font-size: 36px; line-height: 40px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M186.66,59.56C168.47,32.29,146.54,16,128,16S87.53,32.29,69.34,59.56C50.7,87.54,40,121.23,40,152a88,88,0,0,0,176,0C216,121.23,205.3,87.54,186.66,59.56ZM128,224a72.08,72.08,0,0,1-72-72c0-27.69,9.72-58.15,26.66-83.56C97.19,46.64,115.41,32,128,32s30.81,14.64,45.34,36.44C190.28,93.85,200,124.31,200,152A72.08,72.08,0,0,1,128,224Z"/></svg>
+  <h1>这个页面被蛋仔吃掉了</h1>
+  <p>你要找的页面不存在，或者已经被蛋仔藏起来了。</p>
+  <a class="btn" href="/">回首页
+    <svg class="icon" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></svg>
+  </a>
+</main>
+</body>
+</html>

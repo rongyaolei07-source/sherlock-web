@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>愿望后台 · 蛋仔导航网</title>
+<style>
+  * { box-sizing:border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    min-height:100vh;
+    background:#04141c; color:#e8f4f2;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:680px; margin:0 auto; padding:32px 20px 60px; }
+  h1 { margin:0 0 6px; font-size:26px; font-weight:800; }
+  .sub { margin:0 0 24px; font-size:14px; color:#8fb3ae; }
+  .card {
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:16px; padding:18px;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  }
+  label { display:block; font-size:14px; font-weight:600; margin-bottom:8px; }
+  input[type=password] {
+    width:100%; padding:12px 14px; font:inherit; font-size:15px; color:#fff;
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.25);
+    border-radius:10px; outline:none;
+  }
+  input[type=password]:focus { border-color:#2dd4bf; }
+  button {
+    margin-top:12px; border:none; cursor:pointer; border-radius:10px;
+    padding:12px 22px; font:inherit; font-size:15px; font-weight:700;
+    color:#062a2e; background:linear-gradient(90deg,#2dd4bf,#0ea5a4);
+  }
+  button.ghost {
+    background:transparent; color:#cfe8e4;
+    border:1px solid rgba(255,255,255,.3); font-weight:600;
+  }
+  .msg { margin-top:12px; font-size:13px; color:#fca5a5; min-height:18px; }
+  .count { font-size:14px; color:#8fb3ae; margin:20px 0 12px; }
+  .wish {
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:12px; padding:14px 16px; margin-bottom:10px;
+  }
+  .wish p { margin:0 0 8px; font-size:15px; line-height:1.7; white-space:pre-wrap; word-break:break-word; }
+  .wish time { font-size:12px; color:#7ba39d; }
+  .empty { color:#8fb3ae; font-size:14px; text-align:center; padding:30px 0; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>愿望后台</h1>
+  <p class="sub">只有知道密码的人能看到大家许的愿望 · 蛋仔导航网</p>
+
+  <div class="card" id="loginCard">
+    <form id="loginForm">
+      <label for="pw">管理员密码</label>
+      <input type="password" id="pw" autocomplete="current-password" placeholder="输入密码">
+      <button type="submit">查看愿望</button>
+      <p class="msg" id="loginMsg" role="status"></p>
+    </form>
+  </div>
+
+  <div id="listView" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <p class="count" id="count"></p>
+      <button class="ghost" type="button" id="refreshBtn">刷新</button>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+const loginForm = document.getElementById('loginForm');
+const loginCard = document.getElementById('loginCard');
+const loginMsg = document.getElementById('loginMsg');
+const listView = document.getElementById('listView');
+const listEl = document.getElementById('list');
+const countEl = document.getElementById('count');
+let password = '';
+
+async function loadWishes() {
+  // 密码走请求头，不放网址里
+  const res = await fetch('/api/wish', { headers: { 'X-Admin-Password': password } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || ('加载失败（' + res.status + '）'));
+  countEl.textContent = '共 ' + data.count + ' 条愿望 · 最新在前';
+  listEl.innerHTML = '';
+  if (!data.wishes || data.wishes.length === 0) {
+    listEl.innerHTML = '<p class="empty">还没有人许愿。</p>';
+    return;
+  }
+  for (const w of data.wishes) {
+    const div = document.createElement('div');
+    div.className = 'wish';
+    const p = document.createElement('p');
+    p.textContent = w.text;           // textContent 渲染，不解析 HTML，防注入
+    const time = document.createElement('time');
+    time.textContent = new Date(w.createdAt).toLocaleString('zh-CN', { hour12: false });
+    div.append(p, time);
+    listEl.appendChild(div);
+  }
+}
+
+loginForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  password = document.getElementById('pw').value;
+  loginMsg.textContent = '';
+  try {
+    await loadWishes();
+    loginCard.classList.add('hidden');
+    listView.classList.remove('hidden');
+  } catch (err) {
+    loginMsg.textContent = err.message || '加载失败';
+  }
+});
+
+document.getElementById('refreshBtn').addEventListener('click', async () => {
+  try { await loadWishes(); } catch (err) { alert(err.message || '刷新失败'); }
+});
+</script>
+</body>
+</html>
